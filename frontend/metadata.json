@@ -1,0 +1,6 @@
+{
+  "name": "Community Matrimony & Porutham Matcher",
+  "description": "An interactive matrimonial web application with a comprehensive left-hand sidebar menu, candidate database CRUD management, analytics reports, and a Tamil Ten Porutham matchmaking engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

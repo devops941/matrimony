@@ -1,0 +1,21 @@
+// This is your Prisma schema file
+// Write your models here
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
+// Add your models below
+// Example:
+// model User {
+//   id    String @id @default(auto()) @map("_id") @db.ObjectId
+//   name  String
+//   email String @unique
+// }
