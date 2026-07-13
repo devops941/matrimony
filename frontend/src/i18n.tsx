@@ -21,7 +21,8 @@ const translations: Record<Language, Record<string, string>> = {
     mediaReview: 'Media & Review',
     confirmedMatches: 'Confirmed Matches',
     matchingRulesInfo: 'Matching Rules & Info',
-    // ... add more as needed
+    attendanceEntry: 'Attendance Entry',
+    nakshatraPorutham: 'Nakshatra Porutham',
   },
   ta: {
     dashboard: 'முகப்பு',
@@ -35,7 +36,8 @@ const translations: Record<Language, Record<string, string>> = {
     mediaReview: 'ஊடகம் மற்றும் விமர்சனம்',
     confirmedMatches: 'உறுதிப்படுத்தப்பட்ட பொருத்தங்கள்',
     matchingRulesInfo: 'பொருத்த விதிகள் மற்றும் தகவல்',
-    // ... add more as needed
+    attendanceEntry: 'வருகை பதிவு',
+    nakshatraPorutham: 'நட்சத்திர பொருத்தம்',
   }
 };
 

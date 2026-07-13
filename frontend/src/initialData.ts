@@ -386,18 +386,6 @@ export const INITIAL_ATTENDANCE = [
   { id: "att-7", employeeId: "emp-3", date: "2026-06-28", status: "Absent", notes: "Uninformed absence" }
 ];
 
-export const INITIAL_COMPANY_PROFILE = {
-  companyName: "Manappandal Matrimony",
-  address: "No. 42, Kongu Towers, Avinashi Road, Peelamedu",
-  contactPerson: "Baskar (General Manager)",
-  phone: "+91 98765 43210",
-  email: "contact@manappandalmatrimony.com",
-  whatsappNumber: "+91 98765 43210",
-  city: "Coimbatore",
-  gstNumber: "33AAAAK1234A1Z5",
-  incorporationDetails: "U93000TZ2024PTC042891 (Incorporated under Companies Act 2013, Govt of India)",
-  brochureImageUrl: ""
-};
 
 export const INITIAL_GALLERY = [
   {
