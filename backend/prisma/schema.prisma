@@ -12,10 +12,17 @@ generator client {
   recursive_type_depth = 5
 }
 
-// Add your models below
-// Example:
-// model User {
-//   id    String @id @default(auto()) @map("_id") @db.ObjectId
-//   name  String
-//   email String @unique
-// }
+model CompanyProfile {
+  id                    String @id @default(auto()) @map("_id") @db.ObjectId
+  companyName           String
+  address               String
+  phone                 String
+  email                 String
+  whatsappNumber        String
+  city                  String
+  state                 String
+  country               String
+  gstNumber             String @default("")
+  incorporationDetails  String @default("")
+  companyLogoUrl        String  @default("")
+}

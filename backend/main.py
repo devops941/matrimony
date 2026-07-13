@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 from prisma import Prisma
+from routers.company import router as company_router
 
 # Load environment variables
 load_dotenv()
@@ -27,6 +28,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(company_router)
 
 @app.on_event("startup")
 async def startup():

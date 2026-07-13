@@ -87,14 +87,15 @@ export interface AttendanceRecord {
 export interface CompanyProfile {
   companyName: string;
   address: string;
-  contactPerson: string;
   phone: string;
   email: string;
   whatsappNumber: string;
   city: string;
+  state?: string;
+  country?: string;
   gstNumber: string;
   incorporationDetails: string;
-  brochureImageUrl?: string;
+  companyLogoUrl?: string;
 }
 
 export interface GalleryItem {
