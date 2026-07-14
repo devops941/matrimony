@@ -25,7 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
   recommend: 'AI Recommendations',
   employees: 'Employees',
   attendance: 'Attendance',
-  admin: 'Admin Console',
+  admin: 'Settings',
   company: 'Company Profile',
   social: 'Media & Reviews',
   confirmed: 'Confirmed Matches',
@@ -33,7 +33,7 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 export default function TopHeader() {
-  const { currentUser, setCurrentUser, activeTab, showToast } = useApp();
+  const { currentUser, setCurrentUser, activeTab, setActiveTab, showToast } = useApp();
   const { language, setLanguage } = useI18n();
 
   const handleLogout = () => {
@@ -87,7 +87,13 @@ export default function TopHeader() {
                 <User className={`h-3.5 w-3.5 ${Surface.text[400]}`} />
                 <span>My Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const targetPath = '/dashboard/admin';
+                if (window.location.pathname !== targetPath) {
+                  window.history.pushState(null, '', targetPath);
+                }
+                setActiveTab('admin');
+              }}>
                 <Settings className={`h-3.5 w-3.5 ${Surface.text[400]}`} />
                 <span>Settings</span>
               </DropdownMenuItem>

@@ -44,10 +44,11 @@ export interface MatchRequest {
 export interface CommunityInfo {
   id: string;
   name: string;
-  franchiseCount: number;
-  profileCount: number;
-  region: string;
-  code: string;
+  isActive?: boolean;
+  franchiseCount?: number;
+  profileCount?: number;
+  region?: string;
+  code?: string;
 }
 
 export interface EmployeePermissions {
