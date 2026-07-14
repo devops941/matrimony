@@ -39,7 +39,7 @@ export default function MobileHeader({ onNavigate }: MobileHeaderProps) {
     { key: 'matcher', label: 'Porutham Matcher', Icon: Compass },
     { key: 'recommend', label: 'AI Matches Engine', Icon: Sparkles },
     { key: 'employees', label: 'Employee & Attendance', Icon: ClipboardList },
-    { key: 'admin', label: 'Admin Console', Icon: Settings },
+    { key: 'admin', label: 'Settings', Icon: Settings },
     { key: 'company', label: 'Company Profile', Icon: Building },
     { key: 'social', label: 'Media & Reviews', Icon: MessageSquare },
     { key: 'confirmed', label: 'Confirmed Matches', Icon: Heart },

@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { key: 'recommend', labelKey: 'aiMatchesEngine', Icon: Sparkles },
   { key: 'employees', labelKey: 'employeeAttendance', Icon: ClipboardList },
   { key: 'attendance', labelKey: 'attendanceEntry', Icon: Calendar },
-  { key: 'admin', labelKey: 'adminConsole', Icon: Settings },
+  { key: 'admin', labelKey: 'userCreationSettings', Icon: Settings },
   { key: 'social', labelKey: 'mediaReview', Icon: MessageSquare },
   { key: 'confirmed', labelKey: 'confirmedMatches', Icon: Heart },
   { key: 'help', labelKey: 'matchingRulesInfo', Icon: HelpCircle },

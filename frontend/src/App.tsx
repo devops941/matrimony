@@ -21,6 +21,7 @@ import ProfileDetailModal from './components/modals/ProfileDetailModal';
 import ProfileFormModal from './components/modals/ProfileFormModal';
 import PaymentModal from './components/modals/PaymentModal';
 import CommunityFormModal from './components/modals/CommunityFormModal';
+import NakshatraFormModal from './components/modals/NakshatraFormModal';
 import { Surface, Composites } from './theme';
 
 type TabType = 'dashboard' | 'directory' | 'matcher' | 'recommend' | 'employees' | 'admin' | 'help' | 'company' | 'social' | 'confirmed' | 'attendance' | 'nakshatra';
@@ -31,8 +32,20 @@ const VALID_TABS: ReadonlySet<string> = new Set<string>([
 ]);
 
 function getTabFromPath(): TabType {
-  const slug = window.location.pathname.replace(/^\//, '').split('/')[0];
-  return VALID_TABS.has(slug) ? (slug as TabType) : 'dashboard';
+  const segments = window.location.pathname.replace(/^\//, '').split('/').filter(Boolean);
+  if (segments.length === 0) return 'dashboard';
+
+  if (segments[0] === 'dashboard') {
+    if (segments.length === 1) return 'dashboard';
+    if (VALID_TABS.has(segments[1])) return segments[1] as TabType;
+    return 'dashboard';
+  }
+
+  if (VALID_TABS.has(segments[0])) {
+    return segments[0] as TabType;
+  }
+
+  return 'dashboard';
 }
 
 function AppShell() {
@@ -44,17 +57,28 @@ function AppShell() {
       setActiveTab(getTabFromPath());
     };
     window.addEventListener('popstate', handlePopState);
+
+    const path = window.location.pathname.replace(/^\//, '').split('/').filter(Boolean);
     const currentTab = getTabFromPath();
-    if (window.location.pathname === '/' || !VALID_TABS.has(window.location.pathname.replace(/^\//, '').split('/')[0])) {
+    const isValidDashboardNested = path[0] === 'dashboard' && path.length > 1 && VALID_TABS.has(path[1]);
+    const isValidTopLevel = path.length === 1 && VALID_TABS.has(path[0]);
+
+    if (window.location.pathname === '/') {
+      window.history.replaceState(null, '', '/dashboard');
+    } else if (isValidTopLevel && path[0] !== 'dashboard') {
+      window.history.replaceState(null, '', `/dashboard/${path[0]}`);
+    } else if (!isValidDashboardNested && !isValidTopLevel) {
       window.history.replaceState(null, '', '/dashboard');
     }
+
     setActiveTab(currentTab);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setActiveTab]);
 
   const handleNavigate = (tab: string) => {
-    if (window.location.pathname !== `/${tab}`) {
-      window.history.pushState(null, '', `/${tab}`);
+    const targetPath = tab === 'dashboard' ? '/dashboard' : `/dashboard/${tab}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
     }
     setActiveTab(tab as TabType);
   };
@@ -105,6 +129,7 @@ function AppShell() {
       <ProfileFormModal />
       <PaymentModal />
       <CommunityFormModal />
+      <NakshatraFormModal />
     </div>
   );
 }

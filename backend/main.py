@@ -2,14 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
-from prisma import Prisma
+from db import db
 from routers.company import router as company_router
+from routers.nakshatra import router as nakshatra_router
+from routers.imagekit import router as imagekit_router
+from routers.community import router as community_router
+from routers.nakshatra_router import router as custom_nakshatra_router
+from routers.porutham_router import router as porutham_router
+from routers.job_category_router import router as job_category_router
 
 # Load environment variables
 load_dotenv()
-
-# Initialize Prisma Client
-prisma = Prisma()
 
 app = FastAPI(
     title="Community Matrimony & Porutham Matcher API",
@@ -30,17 +33,23 @@ app.add_middleware(
 )
 
 app.include_router(company_router)
+app.include_router(nakshatra_router)
+app.include_router(imagekit_router)
+app.include_router(community_router)
+app.include_router(custom_nakshatra_router)
+app.include_router(porutham_router)
+app.include_router(job_category_router)
 
 @app.on_event("startup")
 async def startup():
     """Connect to database on startup"""
-    await prisma.connect()
+    await db.connect()
     print("✅ Connected to MongoDB via Prisma")
 
 @app.on_event("shutdown")
 async def shutdown():
     """Disconnect from database on shutdown"""
-    await prisma.disconnect()
+    await db.disconnect()
     print("🔴 Disconnected from MongoDB")
 
 @app.get("/")
@@ -63,7 +72,7 @@ async def health_check():
     """Health check endpoint"""
     try:
         # Check if Prisma is connected
-        is_connected = prisma.is_connected()
+        is_connected = db.is_connected()
         return {
             "status": "healthy",
             "service": "matrimony-backend",

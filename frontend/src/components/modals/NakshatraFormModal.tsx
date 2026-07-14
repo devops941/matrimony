@@ -11,40 +11,36 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function CommunityFormModal() {
+export default function NakshatraFormModal() {
   const {
-    isNewCommunityOpen,
-    setIsNewCommunityOpen,
-    newCommName,
-    setNewCommName,
-    newCommRegion,
-    setNewCommRegion,
-    newCommCode,
-    setNewCommCode,
-    handleCreateCommunity,
+    isNewNakshatraOpen,
+    setIsNewNakshatraOpen,
+    newNakshatraName,
+    setNewNakshatraName,
+    handleCreateNakshatra,
   } = useApp();
 
   return (
-    <Dialog open={isNewCommunityOpen} onOpenChange={setIsNewCommunityOpen}>
+    <Dialog open={isNewNakshatraOpen} onOpenChange={setIsNewNakshatraOpen}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Astrological Community</DialogTitle>
+          <DialogTitle>Add Custom Birth Star (Nakshatra)</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleCreateCommunity} className="space-y-4 text-xs">
+        <form onSubmit={handleCreateNakshatra} className="space-y-4 text-xs">
           <div>
-            <Label className={`font-bold ${Surface.text[600]} mb-1`}>Community Name</Label>
+            <Label className={`font-bold ${Surface.text[600]} mb-1`}>Nakshatra Name</Label>
             <Input
               required
-              value={newCommName}
-              onChange={e => setNewCommName(e.target.value)}
-              placeholder="e.g. Kongu Vellalar"
+              value={newNakshatraName}
+              onChange={e => setNewNakshatraName(e.target.value)}
+              placeholder="e.g. Rohini / ரோகிணி"
               className={Surface[50]}
             />
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsNewCommunityOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsNewNakshatraOpen(false)}>
               Cancel
             </Button>
             <Button type="submit">

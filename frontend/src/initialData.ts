@@ -1,4 +1,4 @@
-import { Profile, CommunityInfo } from './types';
+import { Profile } from './types';
 
 export const INITIAL_PROFILES: Profile[] = [
   // MALES
@@ -304,15 +304,6 @@ export const INITIAL_PROFILES: Profile[] = [
       houseOwnedRequired: false
     }
   }
-];
-
-export const INITIAL_COMMUNITIES: CommunityInfo[] = [
-  { id: "c1", name: "Kongu Vellalar", franchiseCount: 14, profileCount: 1850, region: "Western Tamil Nadu (Kongu Nadu)", code: "KVKN" },
-  { id: "c2", name: "Iyer", franchiseCount: 8, profileCount: 1240, region: "Cauvery Delta & Chennai", code: "IYER" },
-  { id: "c3", name: "Chettiar", franchiseCount: 6, profileCount: 950, region: "Chettinad & Madurai", code: "CHET" },
-  { id: "c4", name: "Mudaliar", franchiseCount: 10, profileCount: 1420, region: "Northern & Central Tamil Nadu", code: "MUDL" },
-  { id: "c5", name: "Adidravidar", franchiseCount: 12, profileCount: 1680, region: "All Districts", code: "ADID" },
-  { id: "c6", name: "Any Community", franchiseCount: 4, profileCount: 800, region: "Global / Inter-Community", code: "COMM" }
 ];
 
 export const INITIAL_REQUESTS = [

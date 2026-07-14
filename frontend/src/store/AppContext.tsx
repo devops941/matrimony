@@ -13,7 +13,6 @@ import {
 } from '../types';
 import {
   INITIAL_PROFILES,
-  INITIAL_COMMUNITIES,
   INITIAL_REQUESTS,
   INITIAL_EMPLOYEES,
   INITIAL_ATTENDANCE,
@@ -23,6 +22,11 @@ import {
   INITIAL_TESTIMONIALS
 } from '../initialData';
 import { calculatePorutham, NAKSHATRAS, RASI_LORDS, MatchingResult } from '../porutham';
+import { getCommunities, createCommunity, updateCommunity, deleteCommunity } from '../api/community';
+import { getCustomNakshatras, createCustomNakshatra, updateCustomNakshatra, deleteCustomNakshatra, CustomNakshatra } from '../api/nakshatra_api';
+import { getPoruthams, updatePorutham, PoruthamConfig } from '../api/porutham_api';
+import { getJobCategories, createJobCategory, updateJobCategory, deleteJobCategory, JobCategory } from '../api/job_category_api';
+
 
 interface AppContextType {
   currentUser: Employee | null;
@@ -238,7 +242,28 @@ interface AppContextType {
   handleSendRequest: (senderId: string, receiverId: string) => void;
   handleUpdateStatus: (reqId: string, status: 'Accepted' | 'Declined') => void;
   handleCreateCommunity: (e: React.FormEvent) => void;
+  handleUpdateCommunity: (id: string, payload: { name?: string; isActive?: boolean }) => Promise<void>;
+  handleDeleteCommunity: (id: string) => Promise<void>;
   handleAiAdvisory: (bride: Profile, groom: Profile) => void;
+  combinedNakshatras: any[];
+  newNakshatraName: string;
+  setNewNakshatraName: React.Dispatch<React.SetStateAction<string>>;
+  isNewNakshatraOpen: boolean;
+  setIsNewNakshatraOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleCreateNakshatra: (e: React.FormEvent) => Promise<void>;
+  handleUpdateNakshatra: (id: string, payload: { name?: string; isActive?: boolean }) => Promise<void>;
+  handleDeleteNakshatra: (id: string) => Promise<void>;
+  customNakshatras: CustomNakshatra[];
+  poruthams: PoruthamConfig[];
+  handleTogglePorutham: (id: string, isEnabled: boolean) => Promise<void>;
+  jobCategories: JobCategory[];
+  handleCreateJobCategory: (e: React.FormEvent) => Promise<void>;
+  handleUpdateJobCategory: (id: string, payload: { name?: string; isActive?: boolean }) => Promise<void>;
+  handleDeleteJobCategory: (id: string) => Promise<void>;
+  newJobCategoryName: string;
+  setNewJobCategoryName: React.Dispatch<React.SetStateAction<string>>;
+  isNewJobCategoryOpen: boolean;
+  setIsNewJobCategoryOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -268,10 +293,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return saved ? JSON.parse(saved) : INITIAL_PROFILES;
   });
 
-  const [communities, setCommunities] = useState<CommunityInfo[]>(() => {
-    const saved = localStorage.getItem('matrimony_communities');
-    return saved ? JSON.parse(saved) : INITIAL_COMMUNITIES;
-  });
+  const [communities, setCommunities] = useState<CommunityInfo[]>([]);
+  const [customNakshatras, setCustomNakshatras] = useState<CustomNakshatra[]>([]);
+  const [poruthams, setPoruthams] = useState<PoruthamConfig[]>([]);
+  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
+  const [newJobCategoryName, setNewJobCategoryName] = useState('');
+  const [isNewJobCategoryOpen, setIsNewJobCategoryOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchComms() {
+      try {
+        const data = await getCommunities();
+        setCommunities(data);
+      } catch (err) {
+        console.error('Failed to load communities', err);
+      }
+    }
+    async function fetchNakshatras() {
+      try {
+        const data = await getCustomNakshatras();
+        setCustomNakshatras(data);
+      } catch (err) {
+        console.error('Failed to load custom Nakshatras', err);
+      }
+    }
+    async function fetchPoruthams() {
+      try {
+        const data = await getPoruthams();
+        setPoruthams(data);
+      } catch (err) {
+        console.error('Failed to load Poruthams', err);
+      }
+    }
+    async function fetchJobCategories() {
+      try {
+        const data = await getJobCategories();
+        setJobCategories(data);
+      } catch (err) {
+        console.error('Failed to load Job Categories', err);
+      }
+    }
+    fetchComms();
+    fetchNakshatras();
+    fetchPoruthams();
+    fetchJobCategories();
+  }, []);
+
+  const combinedNakshatras = useMemo(() => {
+    const customList = customNakshatras.map((n, i) => ({
+      index: NAKSHATRAS.length + i + 1,
+      name: n.name,
+      tamilName: n.name,
+      gana: 'Deva',
+      defaultRasi: 'Aries'
+    }));
+    return [...NAKSHATRAS, ...customList];
+  }, [customNakshatras]);
+
+
+
 
   const [requests, setRequests] = useState<MatchRequest[]>(() => {
     const saved = localStorage.getItem('matrimony_requests');
@@ -306,7 +386,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { localStorage.setItem('matrimony_employees', JSON.stringify(employees)); }, [employees]);
   useEffect(() => { localStorage.setItem('matrimony_attendance', JSON.stringify(attendance)); }, [attendance]);
   useEffect(() => { localStorage.setItem('matrimony_profiles', JSON.stringify(profiles)); }, [profiles]);
-  useEffect(() => { localStorage.setItem('matrimony_communities', JSON.stringify(communities)); }, [communities]);
   useEffect(() => { localStorage.setItem('matrimony_requests', JSON.stringify(requests)); }, [requests]);
   useEffect(() => { localStorage.setItem('matrimony_gallery', JSON.stringify(gallery)); }, [gallery]);
   useEffect(() => { localStorage.setItem('matrimony_reviews', JSON.stringify(reviews)); }, [reviews]);
@@ -390,6 +469,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [newCommName, setNewCommName] = useState('');
   const [newCommRegion, setNewCommRegion] = useState('');
   const [newCommCode, setNewCommCode] = useState('');
+
+  const [newNakshatraName, setNewNakshatraName] = useState('');
+  const [isNewNakshatraOpen, setIsNewNakshatraOpen] = useState(false);
+
+
 
   const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
   const [pendingProfileData, setPendingProfileData] = useState<Profile | null>(null);
@@ -851,27 +935,135 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast(`Request status updated to ${status}.`, 'success');
   }, [showToast]);
 
-  const handleCreateCommunity = useCallback((e: React.FormEvent) => {
+  const handleCreateCommunity = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommName.trim() || !newCommCode.trim()) {
-      showToast('Community Name and Code are required.', 'error');
+    if (!newCommName.trim()) {
+      showToast('Community Name is required.', 'error');
       return;
     }
-    const newComm: CommunityInfo = {
-      id: `c-${Date.now()}`,
-      name: newCommName.trim(),
-      franchiseCount: Math.floor(Math.random() * 5) + 1,
-      profileCount: 0,
-      region: newCommRegion.trim() || 'All Tamil Nadu',
-      code: newCommCode.toUpperCase().trim()
-    };
-    setCommunities(prev => [...prev, newComm]);
-    setNewCommName('');
-    setNewCommCode('');
-    setNewCommRegion('');
-    setIsNewCommunityOpen(false);
-    showToast(`Created new community: ${newComm.name}`, 'success');
-  }, [newCommName, newCommCode, newCommRegion, showToast]);
+    try {
+      const payload = {
+        name: newCommName.trim(),
+      };
+      const created = await createCommunity(payload);
+      setCommunities(prev => [...prev, created]);
+      setNewCommName('');
+      setNewCommCode('');
+      setNewCommRegion('');
+      setIsNewCommunityOpen(false);
+      showToast(`Created new community: ${created.name}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create community.', 'error');
+    }
+  }, [newCommName, showToast]);
+
+  const handleCreateNakshatra = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNakshatraName.trim()) {
+      showToast('Nakshatra Name is required.', 'error');
+      return;
+    }
+    try {
+      const payload = {
+        name: newNakshatraName.trim(),
+      };
+      const created = await createCustomNakshatra(payload);
+      setCustomNakshatras(prev => [...prev, created]);
+      setNewNakshatraName('');
+      setIsNewNakshatraOpen(false);
+      showToast(`Created new Birth Star: ${created.name}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create Birth Star.', 'error');
+    }
+  }, [newNakshatraName, showToast]);
+
+  const handleUpdateCommunity = useCallback(async (id: string, payload: { name?: string; isActive?: boolean }) => {
+    try {
+      const updated = await updateCommunity(id, payload);
+      setCommunities(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+      showToast('Community updated.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update community.', 'error');
+    }
+  }, [showToast]);
+
+  const handleDeleteCommunity = useCallback(async (id: string) => {
+    try {
+      await deleteCommunity(id);
+      setCommunities(prev => prev.filter(c => c.id !== id));
+      showToast('Community deleted.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete community.', 'error');
+    }
+  }, [showToast]);
+
+  const handleUpdateNakshatra = useCallback(async (id: string, payload: { name?: string; isActive?: boolean }) => {
+    try {
+      const updated = await updateCustomNakshatra(id, payload);
+      setCustomNakshatras(prev => prev.map(n => n.id === id ? { ...n, ...updated } : n));
+      showToast('Birth Star updated.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update Birth Star.', 'error');
+    }
+  }, [showToast]);
+
+  const handleDeleteNakshatra = useCallback(async (id: string) => {
+    try {
+      await deleteCustomNakshatra(id);
+      setCustomNakshatras(prev => prev.filter(n => n.id !== id));
+      showToast('Birth Star deleted.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete Birth Star.', 'error');
+    }
+  }, [showToast]);
+
+  const handleTogglePorutham = useCallback(async (id: string, isEnabled: boolean) => {
+    try {
+      const updated = await updatePorutham(id, { isEnabled });
+      setPoruthams(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+      showToast(`Porutham ${isEnabled ? 'enabled' : 'disabled'}.`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update Porutham.', 'error');
+    }
+  }, [showToast]);
+
+  const handleCreateJobCategory = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJobCategoryName.trim()) {
+      showToast('Job Category name is required.', 'error');
+      return;
+    }
+    try {
+      const created = await createJobCategory({ name: newJobCategoryName.trim() });
+      setJobCategories(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewJobCategoryName('');
+      setIsNewJobCategoryOpen(false);
+      showToast(`Created job category: ${created.name}`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create job category.', 'error');
+    }
+  }, [newJobCategoryName, showToast]);
+
+  const handleUpdateJobCategory = useCallback(async (id: string, payload: { name?: string; isActive?: boolean }) => {
+    try {
+      const updated = await updateJobCategory(id, payload);
+      setJobCategories(prev => prev.map(j => j.id === id ? { ...j, ...updated } : j));
+      showToast('Job category updated.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update job category.', 'error');
+    }
+  }, [showToast]);
+
+  const handleDeleteJobCategory = useCallback(async (id: string) => {
+    try {
+      await deleteJobCategory(id);
+      setJobCategories(prev => prev.filter(j => j.id !== id));
+      showToast('Job category deleted.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete job category.', 'error');
+    }
+  }, [showToast]);
+
 
   const calculateExpectationMatch = useCallback((profileA: Profile, profileB: Profile) => {
     let score = 0;
@@ -1092,6 +1284,11 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     newCommRegion, setNewCommRegion,
     newCommCode, setNewCommCode,
 
+    newNakshatraName, setNewNakshatraName,
+    isNewNakshatraOpen, setIsNewNakshatraOpen,
+    customNakshatras, combinedNakshatras,
+
+
     isPaymentPopupOpen, setIsPaymentPopupOpen,
     pendingProfileData, setPendingProfileData,
     whatsappConfirmations, setWhatsappConfirmations,
@@ -1109,6 +1306,7 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     handleOpenEditForm,
     handleSaveProfile,
     handleDeleteProfile,
+    handleCreateNakshatra,
     handlePaymentSuccess,
     handleSaveEmployee,
     handleOpenAddEmployee,
@@ -1121,6 +1319,18 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     handleSendRequest,
     handleUpdateStatus,
     handleCreateCommunity,
+    handleUpdateCommunity,
+    handleDeleteCommunity,
+    handleUpdateNakshatra,
+    handleDeleteNakshatra,
+    poruthams,
+    handleTogglePorutham,
+    jobCategories,
+    handleCreateJobCategory,
+    handleUpdateJobCategory,
+    handleDeleteJobCategory,
+    newJobCategoryName, setNewJobCategoryName,
+    isNewJobCategoryOpen, setIsNewJobCategoryOpen,
     handleAiAdvisory
   };
 

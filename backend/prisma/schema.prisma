@@ -10,6 +10,7 @@ generator client {
   provider             = "prisma-client-py"
   interface            = "asyncio"
   recursive_type_depth = 5
+  output               = "../prisma_client"
 }
 
 model CompanyProfile {
@@ -25,4 +26,38 @@ model CompanyProfile {
   gstNumber             String @default("")
   incorporationDetails  String @default("")
   companyLogoUrl        String  @default("")
+}
+
+model NakshatraMatrix {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  matrix       Json
+  isCustomized Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+}
+
+model Community {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  isActive Boolean @default(true)
+}
+
+model Nakshatra {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  name     String  @unique
+  isActive Boolean @default(true)
+}
+
+model Porutham {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  key         String  @unique   // e.g. "Dina"
+  label       String            // e.g. "Dina Porutham (Longevity & Health)"
+  description String            // what it governs
+  orderIndex  Int               // 1-10 for display order
+  isEnabled   Boolean @default(true)
+}
+
+model JobCategory {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  name     String  @unique
+  isActive Boolean @default(true)
 }

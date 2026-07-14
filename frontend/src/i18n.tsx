@@ -13,7 +13,7 @@ const translations: Record<Language, Record<string, string>> = {
     dashboard: 'Dashboard',
     companyProfile: 'Company Profile',
     adminConsole: 'Admin Console',
-    userCreationSettings: 'User Creation & Settings',
+    userCreationSettings: 'Settings',
     employeeAttendance: 'Employee & Attendance',
     manageProfiles: 'Manage Profiles (CRUD)',
     poruthamMatcher: 'Porutham Matcher',

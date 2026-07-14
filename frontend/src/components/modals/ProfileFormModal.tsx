@@ -42,6 +42,8 @@ export default function ProfileFormModal() {
     formExpLocations, setFormExpLocations,
     formExpGold, setFormExpGold,
     communities,
+    combinedNakshatras,
+    jobCategories,
     handleSaveProfile,
     handlePhotoUpload,
     showToast,
@@ -59,10 +61,10 @@ export default function ProfileFormModal() {
         </DialogHeader>
 
         <form onSubmit={handleSaveProfile} className={`space-y-6 text-xs ${Surface.text[700]}`}>
-          
+
           <div className="space-y-3.5">
             <h4 className={`font-extrabold text-[10px] uppercase tracking-wider ${Surface.text[400]} border-b ${Surface.border[100]} pb-1`}>1. Personal & Astro Details</h4>
-            
+
             <div className={`${Surface[50]} border border-dashed ${Surface.border[200]} rounded-xl p-4 flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4`}>
               <div className="relative group shrink-0">
                 <Avatar type={formAvatarUrl || (formGender === 'Male' ? 'male_1' : 'female_1')} className={`h-20 w-20 ring-4 ${Primary.opacity.ring_50}`} />
@@ -80,10 +82,10 @@ export default function ProfileFormModal() {
                   </button>
                 )}
               </div>
-              
+
               <div className="flex-1 w-full space-y-2">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                  <label 
+                  <label
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -107,18 +109,6 @@ export default function ProfileFormModal() {
                     </span>
                     <span className={`text-[9px] ${Surface.text[400]}`}>Drag & drop or click</span>
                   </label>
-
-                  <div className={`flex-1 flex flex-col justify-between p-3 ${Static.white} border ${Surface.border[200]} rounded-lg`}>
-                    <Label className={`font-bold ${Surface.text[600]} mb-1`}>Or Paste Image URL</Label>
-                    <Input
-                      type="text"
-                      value={typeof formAvatarUrl === 'string' && !formAvatarUrl.startsWith('data:') ? formAvatarUrl : ''}
-                      onChange={(e) => setFormAvatarUrl(e.target.value)}
-                      placeholder="https://example.com/photo.jpg"
-                      className={`${Surface[50]} text-[11px]`}
-                    />
-                    <p className={`text-[8px] ${Surface.text[400]} mt-1`}>Accepts any online image address.</p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -160,7 +150,7 @@ export default function ProfileFormModal() {
                     let age = today.getFullYear() - birthDate.getFullYear();
                     const m = today.getMonth() - birthDate.getMonth();
                     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                        age--;
+                      age--;
                     }
                     setFormAge(age);
                   }}
@@ -221,7 +211,7 @@ export default function ProfileFormModal() {
                   onChange={e => setFormNakshatra(e.target.value)}
                   className={`w-full ${Surface[50]} border ${Surface.border[200]} rounded-lg p-2 ${Primary.focus.border} focus:outline-none font-bold ${Surface.text[800]}`}
                 >
-                  {NAKSHATRAS.map(n => <option key={n.index} value={n.name}>{n.name} ({n.tamilName})</option>)}
+                  {combinedNakshatras.map(n => <option key={n.index} value={n.name}>{n.name} ({n.tamilName})</option>)}
                 </select>
               </div>
 
@@ -256,12 +246,9 @@ export default function ProfileFormModal() {
                   onChange={e => setFormJobType(e.target.value)}
                   className={`w-full ${Surface[50]} border ${Surface.border[200]} rounded-lg p-2 ${Primary.focus.border} focus:outline-none`}
                 >
-                  <option value="IT & Software">IT & Software</option>
-                  <option value="Medical">Medical / Doctor</option>
-                  <option value="Business / Entrepreneur">Business / Entrepreneur</option>
-                  <option value="Finance">Finance / CA</option>
-                  <option value="Government Service">Government Service</option>
-                  <option value="Teacher / Professor">Teacher / Professor</option>
+                  {jobCategories.filter(c => c.isActive).map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -292,7 +279,6 @@ export default function ProfileFormModal() {
 
           <div className="space-y-3.5">
             <h4 className={`font-extrabold text-[10px] uppercase tracking-wider ${Surface.text[400]} border-b ${Surface.border[100]} pb-1`}>2. Target Partner Expectations</h4>
-            
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className={`font-bold ${Surface.text[600]} mb-1`}>Min Age Expected</Label>
@@ -378,15 +364,15 @@ export default function ProfileFormModal() {
           </DialogFooter>
 
           {whatsappConfirmations.filter(w => !w.sent).length > 0 && (
-             <div className={`p-4 ${Success[50]} rounded-xl border ${Success.border[100]}`}>
-                <h4 className={`font-bold ${Success.text[800]} text-xs mb-2`}>Pending WhatsApp Messages</h4>
-                {whatsappConfirmations.filter(w => !w.sent).map((w, i) => (
-                  <div key={i} className={`flex items-center justify-between ${Static.white} p-2 rounded-lg text-[10px] mb-1`}>
-                    <span>{w.message}</span>
-                    <Button size="sm" variant="outline" onClick={() => setWhatsappConfirmations(prev => prev.map((item, idx) => idx === i ? {...item, sent: true} : item))} className={`${Success[600]} ${Static.textWhite} px-2 py-1 text-[10px] h-auto`}>Send</Button>
-                  </div>
-                ))}
-             </div>
+            <div className={`p-4 ${Success[50]} rounded-xl border ${Success.border[100]}`}>
+              <h4 className={`font-bold ${Success.text[800]} text-xs mb-2`}>Pending WhatsApp Messages</h4>
+              {whatsappConfirmations.filter(w => !w.sent).map((w, i) => (
+                <div key={i} className={`flex items-center justify-between ${Static.white} p-2 rounded-lg text-[10px] mb-1`}>
+                  <span>{w.message}</span>
+                  <Button size="sm" variant="outline" onClick={() => setWhatsappConfirmations(prev => prev.map((item, idx) => idx === i ? { ...item, sent: true } : item))} className={`${Success[600]} ${Static.textWhite} px-2 py-1 text-[10px] h-auto`}>Send</Button>
+                </div>
+              ))}
+            </div>
           )}
         </form>
       </DialogContent>
