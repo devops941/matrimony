@@ -17,6 +17,6 @@ export default defineConfig(() => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       // SPA fallback: serve index.html for all routes
     },
-    appType: 'spa',
+    appType: 'spa' as const,
   };
 });
