@@ -16,13 +16,13 @@ const NAV_ITEMS = [
   { key: 'directory', labelKey: 'manageProfiles', Icon: Users },
   { key: 'matcher', labelKey: 'poruthamMatcher', Icon: Compass },
   { key: 'nakshatra', labelKey: 'nakshatraPorutham', Icon: Star },
-  { key: 'recommend', labelKey: 'aiMatchesEngine', Icon: Sparkles },
-  { key: 'employees', labelKey: 'employeeAttendance', Icon: ClipboardList },
+  // { key: 'recommend', labelKey: 'aiMatchesEngine', Icon: Sparkles },
+  // { key: 'employees', labelKey: 'employeeAttendance', Icon: ClipboardList },
   { key: 'attendance', labelKey: 'attendanceEntry', Icon: Calendar },
   { key: 'admin', labelKey: 'userCreationSettings', Icon: Settings },
-  { key: 'social', labelKey: 'mediaReview', Icon: MessageSquare },
-  { key: 'confirmed', labelKey: 'confirmedMatches', Icon: Heart },
-  { key: 'help', labelKey: 'matchingRulesInfo', Icon: HelpCircle },
+  // { key: 'social', labelKey: 'mediaReview', Icon: MessageSquare },
+  // { key: 'confirmed', labelKey: 'confirmedMatches', Icon: Heart },
+  // { key: 'help', labelKey: 'matchingRulesInfo', Icon: HelpCircle },
 ] as const;
 
 export default function Sidebar({ collapsed, onToggle, onNavigate }: SidebarProps) {
