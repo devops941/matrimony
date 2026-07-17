@@ -11,7 +11,7 @@ import { Primary, Surface, Success, Warning, Danger, Gender, Static, Composites 
 const DirectoryPage = () => {
   const {
     profiles,
-    setProfiles,
+    handleUpdateProfileData,
     filteredProfiles,
     uniqueCommunities,
     uniqueLocations,
@@ -170,7 +170,7 @@ const DirectoryPage = () => {
                     <h4 className={`font-bold ${Surface.text[900]} ${Primary.hover.text[600]} transition text-sm`}>
                       {p.name}
                     </h4>
-                    <p className={`text-[10px] ${Surface.text[400]} mt-0.5`}>{p.id} • {p.gender} • {p.age} yrs</p>
+                    <p className={`text-[10px] ${Surface.text[400]} mt-0.5`}>{p.registrationId || p.id} • {p.gender} • {p.age} yrs</p>
                   </div>
                 </div>
                 <div className="flex flex-col items-end space-y-1">
@@ -218,10 +218,7 @@ const DirectoryPage = () => {
                         type="checkbox"
                         checked={!!p.approvedByAdmin}
                         onChange={(e) => {
-                          const updated = profiles.map(profile => 
-                            profile.id === p.id ? { ...profile, approvedByAdmin: e.target.checked } : profile
-                          );
-                          setProfiles(updated);
+                          handleUpdateProfileData(p.id, { approvedByAdmin: e.target.checked });
                           showToast(
                             e.target.checked 
                               ? `Successfully approved candidate: ${p.name}` 

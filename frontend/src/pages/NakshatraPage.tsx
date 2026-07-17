@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { getNakshatraMatrix, updateNakshatraMatrix, resetNakshatraMatrix } from "@/api/nakshatra";
+import { calculateTwoStars } from "@/api/porutham_api";
 
 // ---- Data: 12 Rashis, each split into 3 nakshatra-pada segments (36 columns/rows total) ----
 const RASHIS = [
@@ -231,6 +232,29 @@ export default function NakshatraPoruthamTable() {
   const colLabel = describeSelection(selCols);
   const singlePick = selRows && selCols && selRows.length === 1 && selCols.length === 1;
   const pickedValue = singlePick ? matrix[selRows[0]][selCols[0]] : null;
+
+  const [dynMatchResult, setDynMatchResult] = useState<any>(null);
+  const [isDynLoading, setIsDynLoading] = useState(false);
+
+  useEffect(() => {
+    if (singlePick && selRows && selCols) {
+      const brideStar = STAR_ROWS[selRows[0]].star;
+      const groomStar = STAR_ROWS[selCols[0]].star;
+      setIsDynLoading(true);
+      calculateTwoStars(brideStar, groomStar)
+        .then(res => {
+          setDynMatchResult(res);
+        })
+        .catch(err => {
+          console.error("Failed to calculate matching dynamically", err);
+        })
+        .finally(() => {
+          setIsDynLoading(false);
+        });
+    } else {
+      setDynMatchResult(null);
+    }
+  }, [selRows, selCols, singlePick]);
 
   return (
     <div style={{ fontFamily: "'Noto Sans Tamil', 'Latha', sans-serif", background: "#f6f7f8", padding: 16 }}>
@@ -578,6 +602,86 @@ export default function NakshatraPoruthamTable() {
           </table>
         </div>
       </div>
+
+      {singlePick && selRows && selCols && (
+        <div style={{
+          marginTop: 20,
+          background: "#ffffff",
+          border: "1px solid #ddd",
+          borderRadius: 12,
+          padding: 20,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+        }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#111" }}>
+            Astrological Match: {STAR_ROWS[selRows[0]].star} (Bride) × {STAR_ROWS[selCols[0]].star} (Groom)
+          </h3>
+
+          {isDynLoading ? (
+            <div style={{ fontSize: 12, color: "#666" }}>Running dynamic calculations...</div>
+          ) : dynMatchResult ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20 }}>
+              
+              {/* Score section */}
+              <div style={{ background: "#f8fafc", padding: 16, borderRadius: 8, textAlign: "center" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Overall Compatibility</p>
+                <div style={{ fontSize: 32, fontWeight: 800, color: "#312e81", marginTop: 8 }}>
+                  {dynMatchResult.totalScore} <span style={{ fontSize: 14, color: "#64748b" }}>/ 10</span>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#059669", marginTop: 4 }}>
+                  {dynMatchResult.percentage}% Match
+                </div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: "inline-block",
+                  padding: "2px 8px",
+                  borderRadius: 12,
+                  background: dynMatchResult.rating === "Excellent" ? "#ecfdf5" : dynMatchResult.rating === "Good" ? "#eff6ff" : "#fef3c7",
+                  color: dynMatchResult.rating === "Excellent" ? "#047857" : dynMatchResult.rating === "Good" ? "#1d4ed8" : "#b45309",
+                  marginTop: 8
+                }}>
+                  {dynMatchResult.rating} Match
+                </div>
+              </div>
+
+              {/* 10 poruthams list */}
+              <div style={{ maxHeight: 250, overflowY: "auto", paddingRight: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {dynMatchResult.poruthamScores?.map((p: any, idx: number) => (
+                    <div key={idx} style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 12px",
+                      background: "#fdfdfd",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: 6
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{p.label}</div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{p.description}</div>
+                      </div>
+                      <div style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        background: p.status === "Uthamam" ? "#d1fae5" : p.status === "Madhyamam" ? "#fef3c7" : "#fee2e2",
+                        color: p.status === "Uthamam" ? "#065f46" : p.status === "Madhyamam" ? "#92400e" : "#991b1b"
+                      }}>
+                        {p.status}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "#666" }}>Failed to retrieve calculations.</div>
+          )}
+        </div>
+      )}
 
       <p style={{ fontSize: 11, color: '#777', marginTop: 8 }}>
         * Values match the source spreadsheet exactly (36×36 porutham matrix). Click a rāsi or nakshathiram header

@@ -11,6 +11,8 @@ export interface ProfileExpectations {
 
 export interface Profile {
   id: string;
+  registrationId?: string;
+  password?: string;
   name: string;
   gender: 'Male' | 'Female';
   age: number;

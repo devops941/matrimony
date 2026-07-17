@@ -6,7 +6,7 @@ import { Surface, Primary, Danger, Success, Gender, Static } from '../theme';
 export default function ConfirmedPage() {
   const {
     profiles,
-    setProfiles,
+    handleUpdateProfileData,
     currentUser,
     getCompositeScore,
     showToast,
@@ -130,13 +130,8 @@ export default function ConfirmedPage() {
                     {currentUser?.role === 'Admin' && (
                       <button
                         onClick={() => {
-                          const updated = profiles.map(p => {
-                            if (p.id === groom.id || p.id === bride.id) {
-                              return { ...p, confirmedMatchedWith: undefined };
-                            }
-                            return p;
-                          });
-                          setProfiles(updated);
+                          handleUpdateProfileData(groom.id, { confirmedMatchedWith: undefined });
+                          handleUpdateProfileData(bride.id, { confirmedMatchedWith: undefined });
                           showToast(`Success: Unlocked match pair of ${groom.name} & ${bride.name}`, 'info');
                         }}
                         className={`text-[10px] font-bold ${Surface.text[400]} ${Danger.hover.text[600]} transition flex items-center space-x-1 ${Danger.hover.bg[50]} px-2.5 py-1 rounded-lg cursor-pointer`}

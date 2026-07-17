@@ -10,6 +10,7 @@ from routers.community import router as community_router
 from routers.nakshatra_router import router as custom_nakshatra_router
 from routers.porutham_router import router as porutham_router
 from routers.job_category_router import router as job_category_router
+from routers.profile_router import router as profile_router
 
 # Load environment variables
 load_dotenv()
@@ -39,12 +40,21 @@ app.include_router(community_router)
 app.include_router(custom_nakshatra_router)
 app.include_router(porutham_router)
 app.include_router(job_category_router)
+app.include_router(profile_router)
+
+# Mount Socket.io
+from socket_manager import init_socketio
+init_socketio(app)
+
+from match_queue import start_match_worker
 
 @app.on_event("startup")
 async def startup():
     """Connect to database on startup"""
     await db.connect()
     print("✅ Connected to MongoDB via Prisma")
+    start_match_worker()
+    print("🚀 Background Match Queue Worker Started")
 
 @app.on_event("shutdown")
 async def shutdown():

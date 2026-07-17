@@ -61,3 +61,62 @@ model JobCategory {
   name     String  @unique
   isActive Boolean @default(true)
 }
+
+model Profile {
+  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
+  registrationId          String   @unique
+  password                String
+  name                    String
+  gender                  String   // "Male" | "Female"
+  age                     Int
+  height                  String
+  weight                  String   @default("")
+  location                String
+  community               String
+  nakshatra               String
+  rasi                    String
+  education               String
+  jobType                 String
+  annualIncomeLakhs       Int
+  bio                     String
+  avatarUrl               String
+  chevvaiDosham           String   // "Yes" | "No" | "Unknown"
+  birthDate               String
+  birthTime               String
+  birthPlace              String
+  
+  // New Personal Details
+  bloodGroup              String   @default("")
+  diet                    String   @default("Vegetarian")
+  maritalStatus           String   @default("Never Married")
+  motherTongue            String   @default("Tamil")
+  contactNumber           String   @default("")
+  email                   String   @default("")
+  
+  // New Family Details
+  fatherName              String   @default("")
+  fatherOccupation        String   @default("")
+  motherName              String   @default("")
+  motherOccupation        String   @default("")
+  siblings                Int      @default(0)
+  
+  approvedByAdmin         Boolean  @default(true)
+  confirmedMatchedWith    String?
+
+  // Expectations (Flattened for prisma-client-py support)
+  expMinAge               Int      @default(18)
+  expMaxAge               Int      @default(60)
+  expAcceptedCommunities  String[]
+  expAcceptedJobTypes     String[]
+  expMinAnnualIncomeLakhs Int      @default(0)
+  expAcceptedLocations    String[]
+  expGoldExpectedSovereigns Int    @default(0)
+  expHouseOwnedRequired   Boolean  @default(false)
+  
+  // New Expectations
+  expMinHeight            String   @default("")
+  expMaxHeight            String   @default("")
+  expPreferredEducation   String   @default("")
+}
+
+
