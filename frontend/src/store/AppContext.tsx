@@ -11,21 +11,13 @@ import {
   CustomerReview,
   Testimonial
 } from '../types';
-import {
-  INITIAL_PROFILES,
-  INITIAL_REQUESTS,
-  INITIAL_EMPLOYEES,
-  INITIAL_ATTENDANCE,
 
-  INITIAL_GALLERY,
-  INITIAL_REVIEWS,
-  INITIAL_TESTIMONIALS
-} from '../initialData';
 import { calculatePorutham, NAKSHATRAS, RASI_LORDS, MatchingResult } from '../porutham';
 import { getCommunities, createCommunity, updateCommunity, deleteCommunity } from '../api/community';
 import { getCustomNakshatras, createCustomNakshatra, updateCustomNakshatra, deleteCustomNakshatra, CustomNakshatra } from '../api/nakshatra_api';
-import { getPoruthams, updatePorutham, PoruthamConfig } from '../api/porutham_api';
+import { getPoruthams, updatePorutham, PoruthamConfig, getMatchCandidates } from '../api/porutham_api';
 import { getJobCategories, createJobCategory, updateJobCategory, deleteJobCategory, JobCategory } from '../api/job_category_api';
+import { getProfiles, createProfile, updateProfile, deleteProfile } from '../api/profile_api';
 
 
 interface AppContextType {
@@ -114,13 +106,23 @@ interface AppContextType {
   setSelectedProfileId: React.Dispatch<React.SetStateAction<string | null>>;
 
   matcherBrideId: string;
-  setMatcherBrideId: React.Dispatch<React.SetStateAction<string>>;
+  setMatcherBrideId: (id: string) => void;
   matcherGroomId: string;
-  setMatcherGroomId: React.Dispatch<React.SetStateAction<string>>;
+  setMatcherGroomId: (id: string) => void;
   aiAnalysisText: string;
   setAiAnalysisText: React.Dispatch<React.SetStateAction<string>>;
   isAiAnalyzing: boolean;
   setIsAiAnalyzing: React.Dispatch<React.SetStateAction<boolean>>;
+
+  matcherGender: 'Male' | 'Female';
+  setMatcherGender: React.Dispatch<React.SetStateAction<'Male' | 'Female'>>;
+  matcherPrimaryProfileId: string;
+  setMatcherPrimaryProfileId: React.Dispatch<React.SetStateAction<string>>;
+  matcherMatches: any[];
+  setMatcherMatches: React.Dispatch<React.SetStateAction<any[]>>;
+  matcherSelectedMatch: any | null;
+  setMatcherSelectedMatch: React.Dispatch<React.SetStateAction<any | null>>;
+  isMatcherLoading: boolean;
 
   recommendTargetId: string;
   setRecommendTargetId: React.Dispatch<React.SetStateAction<string>>;
@@ -264,6 +266,8 @@ interface AppContextType {
   setNewJobCategoryName: React.Dispatch<React.SetStateAction<string>>;
   isNewJobCategoryOpen: boolean;
   setIsNewJobCategoryOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleUpdateProfileData: (id: string, payload: Partial<Profile>) => Promise<void>;
+  isSavingProfile: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -290,7 +294,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [profiles, setProfiles] = useState<Profile[]>(() => {
     const saved = localStorage.getItem('matrimony_profiles');
-    return saved ? JSON.parse(saved) : INITIAL_PROFILES;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [communities, setCommunities] = useState<CommunityInfo[]>([]);
@@ -333,20 +337,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to load Job Categories', err);
       }
     }
+    async function fetchProfiles() {
+      try {
+        const data = await getProfiles();
+        setProfiles(data);
+      } catch (err) {
+        console.error('Failed to load profiles', err);
+      }
+    }
     fetchComms();
     fetchNakshatras();
     fetchPoruthams();
     fetchJobCategories();
+    fetchProfiles();
   }, []);
 
   const combinedNakshatras = useMemo(() => {
-    const customList = customNakshatras.map((n, i) => ({
-      index: NAKSHATRAS.length + i + 1,
-      name: n.name,
-      tamilName: n.name,
-      gana: 'Deva',
-      defaultRasi: 'Aries'
-    }));
+    const customList = customNakshatras
+      .filter(n => n.isActive !== false)
+      .map((n, i) => ({
+        index: NAKSHATRAS.length + i + 1,
+        name: n.name,
+        tamilName: n.name,
+        gana: 'Deva' as const,
+        defaultRasi: 'Aries'
+      }));
     return [...NAKSHATRAS, ...customList];
   }, [customNakshatras]);
 
@@ -355,32 +370,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [requests, setRequests] = useState<MatchRequest[]>(() => {
     const saved = localStorage.getItem('matrimony_requests');
-    return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [employees, setEmployees] = useState<Employee[]>(() => {
     const saved = localStorage.getItem('matrimony_employees');
-    return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES;
+    return saved ? JSON.parse(saved) : [
+      {
+        id: "emp-1",
+        name: "Baskar",
+        email: "baskar@manappandal.com",
+        username: "admin",
+        password: "password",
+        role: "Admin",
+        permissions: { view: true, create: true, edit: true, delete: true },
+        avatarUrl: "male_1",
+        designation: "General Manager",
+        phone: "9876543210",
+        joinedDate: "2024-01-01"
+      }
+    ];
   });
 
   const [attendance, setAttendance] = useState<AttendanceRecord[]>(() => {
     const saved = localStorage.getItem('matrimony_attendance');
-    return saved ? JSON.parse(saved) : INITIAL_ATTENDANCE;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [gallery, setGallery] = useState<GalleryItem[]>(() => {
     const saved = localStorage.getItem('matrimony_gallery');
-    return saved ? JSON.parse(saved) : INITIAL_GALLERY;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [reviews, setReviews] = useState<CustomerReview[]>(() => {
     const saved = localStorage.getItem('matrimony_reviews');
-    return saved ? JSON.parse(saved) : INITIAL_REVIEWS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
     const saved = localStorage.getItem('matrimony_testimonials');
-    return saved ? JSON.parse(saved) : INITIAL_TESTIMONIALS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => { localStorage.setItem('matrimony_employees', JSON.stringify(employees)); }, [employees]);
@@ -428,8 +457,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [chevvaiFilter, setChevvaiFilter] = useState('All');
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
-  const [matcherBrideId, setMatcherBrideId] = useState<string>('');
-  const [matcherGroomId, setMatcherGroomId] = useState<string>('');
+  const [matcherGender, setMatcherGender] = useState<'Male' | 'Female'>('Male');
+  const [matcherPrimaryProfileId, setMatcherPrimaryProfileId] = useState<string>('');
+  const [matcherMatches, setMatcherMatches] = useState<any[]>([]);
+  const [matcherSelectedMatch, setMatcherSelectedMatch] = useState<any | null>(null);
+  const [isMatcherLoading, setIsMatcherLoading] = useState<boolean>(false);
+
+  const matcherBrideId = useMemo(() => {
+    return matcherGender === 'Female' ? matcherPrimaryProfileId : (matcherSelectedMatch?.profile?.id || '');
+  }, [matcherGender, matcherPrimaryProfileId, matcherSelectedMatch]);
+
+  const matcherGroomId = useMemo(() => {
+    return matcherGender === 'Male' ? matcherPrimaryProfileId : (matcherSelectedMatch?.profile?.id || '');
+  }, [matcherGender, matcherPrimaryProfileId, matcherSelectedMatch]);
+
+  const setMatcherBrideId = useCallback((id: string) => {
+    setMatcherGender('Female');
+    setMatcherPrimaryProfileId(id);
+  }, []);
+
+  const setMatcherGroomId = useCallback((id: string) => {
+    setMatcherGender('Male');
+    setMatcherPrimaryProfileId(id);
+  }, []);
+
   const [aiAnalysisText, setAiAnalysisText] = useState<string>('');
   const [isAiAnalyzing, setIsAiAnalyzing] = useState<boolean>(false);
 
@@ -465,6 +516,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [formExpGold, setFormExpGold] = useState(30);
   const [formExpHouse, setFormExpHouse] = useState(false);
 
+  useEffect(() => {
+    if (!formBirthDate) return;
+    const birthDate = new Date(formBirthDate);
+    if (isNaN(birthDate.getTime())) return;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    setFormAge(age);
+  }, [formBirthDate]);
+
+  const showToast = useCallback((text: string, type: 'success' | 'error' | 'info' = 'info') => {
+    if (type === 'success') sonnerToast.success(text);
+    else if (type === 'error') sonnerToast.error(text);
+    else sonnerToast.info(text);
+  }, []);
+
   const [isNewCommunityOpen, setIsNewCommunityOpen] = useState(false);
   const [newCommName, setNewCommName] = useState('');
   const [newCommRegion, setNewCommRegion] = useState('');
@@ -478,26 +548,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
   const [pendingProfileData, setPendingProfileData] = useState<Profile | null>(null);
   const [whatsappConfirmations, setWhatsappConfirmations] = useState<{ profileId: string; message: string; sent: boolean }[]>([]);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const fetchMatcherMatches = useCallback(async (profileId: string) => {
+    if (!profileId) return;
+    setIsMatcherLoading(true);
+    try {
+      const data = await getMatchCandidates(profileId);
+      setMatcherMatches(data);
+      if (data.length > 0) {
+        setMatcherSelectedMatch(data[0]);
+      } else {
+        setMatcherSelectedMatch(null);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to fetch matches from backend.', 'error');
+    } finally {
+      setIsMatcherLoading(false);
+    }
+  }, [showToast]);
 
   useEffect(() => {
-    const brides = profiles.filter(p => p.gender === 'Female');
-    const grooms = profiles.filter(p => p.gender === 'Male');
-    if (brides.length > 0 && !matcherBrideId) {
-      setMatcherBrideId(brides[0].id);
+    if (matcherPrimaryProfileId) {
+      fetchMatcherMatches(matcherPrimaryProfileId);
+    } else {
+      setMatcherMatches([]);
+      setMatcherSelectedMatch(null);
     }
-    if (grooms.length > 0 && !matcherGroomId) {
-      setMatcherGroomId(grooms[0].id);
+  }, [matcherPrimaryProfileId, fetchMatcherMatches]);
+
+  useEffect(() => {
+    const list = profiles.filter(p => p.gender === matcherGender && p.approvedByAdmin);
+    if (list.length > 0) {
+      const currentIsValid = list.some(p => p.id === matcherPrimaryProfileId);
+      if (!currentIsValid) {
+        setMatcherPrimaryProfileId('');
+      }
+    } else {
+      setMatcherPrimaryProfileId('');
     }
+  }, [matcherGender, profiles]);
+
+  useEffect(() => {
     if (profiles.length > 0 && !recommendTargetId) {
       setRecommendTargetId(profiles[0].id);
     }
   }, [profiles]);
 
-  const showToast = useCallback((text: string, type: 'success' | 'error' | 'info' = 'info') => {
-    if (type === 'success') sonnerToast.success(text);
-    else if (type === 'error') sonnerToast.error(text);
-    else sonnerToast.info(text);
-  }, []);
+
 
   const handlePhotoUpload = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -523,6 +621,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showToast('Access Denied: Your employee role does not have permission to create candidate profiles.', 'error');
       return;
     }
+    const activeComms = communities.filter(c => c.isActive !== false);
+    const activeJobs = jobCategories.filter(c => c.isActive);
+    const firstComm = activeComms.length > 0 ? activeComms[0].name : '';
+    const firstStar = combinedNakshatras.length > 0 ? combinedNakshatras[0].name : 'Ashwini';
+    const firstJob = activeJobs.length > 0 ? activeJobs[0].name : '';
+
     setFormMode('add');
     setEditingProfileId(null);
     setFormName('');
@@ -530,10 +634,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setFormAge(26);
     setFormHeight('5 ft 8 in');
     setFormLocation('Chennai');
-    setFormCommunity('Kongu Vellalar');
-    setFormNakshatra('Ashwini');
+    setFormCommunity(firstComm);
+    setFormNakshatra(firstStar);
     setFormEducation('B.E. Engineering');
-    setFormJobType('IT & Software');
+    setFormJobType(firstJob);
     setFormIncome(12);
     setFormBio('');
     setFormChevvai('No');
@@ -543,14 +647,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setFormAvatarUrl('');
     setFormExpMinAge(21);
     setFormExpMaxAge(29);
-    setFormExpCommunities(['Kongu Vellalar']);
-    setFormExpJobTypes(['IT & Software']);
+    setFormExpCommunities(firstComm ? [firstComm] : []);
+    setFormExpJobTypes(firstJob ? [firstJob] : []);
     setFormExpMinIncome(5);
     setFormExpLocations(['Chennai']);
     setFormExpGold(25);
     setFormExpHouse(false);
     setIsFormOpen(true);
-  }, [currentUser, showToast]);
+  }, [currentUser, showToast, communities, combinedNakshatras, jobCategories]);
 
   const handleOpenEditForm = useCallback((profile: Profile, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -587,8 +691,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsFormOpen(true);
   }, [currentUser, showToast]);
 
-  const handleSaveProfile = useCallback((e: React.FormEvent) => {
+  const handleUpdateProfileData = useCallback(async (id: string, payload: Partial<Profile>) => {
+    try {
+      const updated = await updateProfile(id, payload);
+      setProfiles(prev => prev.map(p => p.id === id ? updated : p));
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update profile.', 'error');
+    }
+  }, [showToast]);
+
+  const handleSaveProfile = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingProfile) return;
     if (!formName.trim()) {
       showToast('Profile name is required.', 'error');
       return;
@@ -609,8 +723,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     if (formMode === 'add') {
-      const newProfile: Profile = {
-        id: `P-${Date.now()}`,
+      const newProfile: Omit<Profile, 'id'> = {
         name: formName.trim(),
         gender: formGender,
         age: formAge,
@@ -630,77 +743,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         birthPlace: formBirthPlace,
         expectations: savedExpectations
       };
-      setPendingProfileData(newProfile);
+      setPendingProfileData(newProfile as Profile);
       setIsPaymentPopupOpen(true);
       return;
     } else {
-      setProfiles(prev =>
-        prev.map(p =>
-          p.id === editingProfileId
-            ? {
-                ...p,
-                name: formName.trim(),
-                gender: formGender,
-                age: formAge,
-                height: formHeight,
-                location: formLocation,
-                community: formCommunity,
-                nakshatra: formNakshatra,
-                rasi: calculatedRasi,
-                education: formEducation.trim(),
-                jobType: formJobType,
-                annualIncomeLakhs: formIncome,
-                bio: formBio.trim(),
-                avatarUrl: formAvatarUrl || p.avatarUrl,
-                chevvaiDosham: formChevvai,
-                birthDate: formBirthDate,
-                birthTime: formBirthTime,
-                birthPlace: formBirthPlace,
-                expectations: savedExpectations
-              }
-            : p
-        )
-      );
-      showToast('Successfully updated profile details!', 'success');
+      if (!editingProfileId) return;
+      setIsSavingProfile(true);
+      try {
+        const updated = await updateProfile(editingProfileId, {
+          name: formName.trim(),
+          gender: formGender,
+          age: formAge,
+          height: formHeight,
+          location: formLocation,
+          community: formCommunity,
+          nakshatra: formNakshatra,
+          rasi: calculatedRasi,
+          education: formEducation.trim(),
+          jobType: formJobType,
+          annualIncomeLakhs: formIncome,
+          bio: formBio.trim(),
+          avatarUrl: formAvatarUrl,
+          chevvaiDosham: formChevvai,
+          birthDate: formBirthDate,
+          birthTime: formBirthTime,
+          birthPlace: formBirthPlace,
+          expectations: savedExpectations
+        });
+        setProfiles(prev => prev.map(p => p.id === editingProfileId ? updated : p));
+        showToast('Successfully updated profile details!', 'success');
+        setIsFormOpen(false);
+      } catch (err: any) {
+        showToast(err.message || 'Failed to update profile.', 'error');
+      } finally {
+        setIsSavingProfile(false);
+      }
     }
-
-    setIsFormOpen(false);
   }, [
     formName, formGender, formAge, formHeight, formLocation, formCommunity,
     formNakshatra, formEducation, formJobType, formIncome, formBio,
     formChevvai, formBirthDate, formBirthTime, formBirthPlace, formAvatarUrl,
     formExpMinAge, formExpMaxAge, formExpCommunities, formExpJobTypes,
     formExpMinIncome, formExpLocations, formExpGold, formExpHouse,
-    formMode, editingProfileId, showToast
+    formMode, editingProfileId, showToast, isSavingProfile
   ]);
 
-  const handleDeleteProfile = useCallback((id: string, e?: React.MouseEvent) => {
+  const handleDeleteProfile = useCallback(async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (currentUser && !currentUser.permissions.delete) {
       showToast('Access Denied: Your employee role does not have permission to delete candidate profiles.', 'error');
       return;
     }
     if (confirm('Are you sure you want to permanently delete this profile?')) {
-      setProfiles(prev => prev.filter(p => p.id !== id));
-      setRequests(prev => prev.filter(r => r.senderId !== id && r.receiverId !== id));
-      if (selectedProfileId === id) setSelectedProfileId(null);
-      showToast('Profile deleted successfully.', 'info');
+      try {
+        await deleteProfile(id);
+        setProfiles(prev => prev.filter(p => p.id !== id));
+        setRequests(prev => prev.filter(r => r.senderId !== id && r.receiverId !== id));
+        if (selectedProfileId === id) setSelectedProfileId(null);
+        showToast('Profile deleted successfully.', 'info');
+      } catch (err: any) {
+        showToast(err.message || 'Failed to delete profile.', 'error');
+      }
     }
   }, [currentUser, showToast, selectedProfileId]);
 
-  const handlePaymentSuccess = useCallback(() => {
-    if (pendingProfileData) {
-      setProfiles(prev => [pendingProfileData, ...prev]);
-      showToast('Successfully registered new matrimonial profile!', 'success');
+  const handlePaymentSuccess = useCallback(async () => {
+    if (isSavingProfile || !pendingProfileData) return;
+    setIsSavingProfile(true);
+    try {
+      const created = await createProfile(pendingProfileData);
+      setProfiles(prev => [created, ...prev]);
+      showToast(`Successfully registered: ${created.name}!`, 'success');
 
-      const whatsappMsg = `Hi ${pendingProfileData.name}, welcome to our Matrimony! Your registration is complete. Your Profile Code: ${pendingProfileData.id}`;
-      setWhatsappConfirmations(prev => [...prev, { profileId: pendingProfileData.id, message: whatsappMsg, sent: false }]);
-
+      const whatsappMsg = `Hi ${created.name}, welcome to our Matrimony! Your registration is complete. Your Login ID (Registration ID): ${created.registrationId}, Temporary Password: ${created.password}`;
+      setWhatsappConfirmations(prev => [...prev, { profileId: created.id, message: whatsappMsg, sent: false }]);
+      
       setPendingProfileData(null);
       setIsPaymentPopupOpen(false);
       setIsFormOpen(false);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to register profile.', 'error');
+    } finally {
+      setIsSavingProfile(false);
     }
-  }, [pendingProfileData, showToast]);
+  }, [pendingProfileData, isSavingProfile, showToast]);
 
   const handleSaveEmployee = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -1153,11 +1279,25 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
   const uniqueCommunities = useMemo(() => Array.from(new Set(profiles.map(p => p.community))), [profiles]);
   const uniqueStars = useMemo(() => Array.from(new Set(profiles.map(p => p.nakshatra))), [profiles]);
 
-  const currentBride = useMemo(() => profiles.find(p => p.id === matcherBrideId && p.gender === 'Female'), [profiles, matcherBrideId]);
-  const currentGroom = useMemo(() => profiles.find(p => p.id === matcherGroomId && p.gender === 'Male'), [profiles, matcherGroomId]);
-  const matchingResult: MatchingResult | null = useMemo(() => (currentBride && currentGroom)
-    ? calculatePorutham(currentBride.nakshatra, currentGroom.nakshatra)
-    : null, [currentBride, currentGroom]);
+  const currentBride = useMemo(() => {
+    if (matcherGender === 'Female') {
+      return profiles.find(p => p.id === matcherPrimaryProfileId);
+    } else {
+      return matcherSelectedMatch?.profile;
+    }
+  }, [profiles, matcherGender, matcherPrimaryProfileId, matcherSelectedMatch]);
+
+  const currentGroom = useMemo(() => {
+    if (matcherGender === 'Male') {
+      return profiles.find(p => p.id === matcherPrimaryProfileId);
+    } else {
+      return matcherSelectedMatch?.profile;
+    }
+  }, [profiles, matcherGender, matcherPrimaryProfileId, matcherSelectedMatch]);
+
+  const matchingResult = useMemo(() => {
+    return matcherSelectedMatch ? matcherSelectedMatch.matchResult : null;
+  }, [matcherSelectedMatch]);
 
   const getCompositeScore = useCallback((bride: Profile, groom: Profile) => {
     const astroResult = calculatePorutham(bride.nakshatra, groom.nakshatra);
@@ -1246,6 +1386,11 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     matcherGroomId, setMatcherGroomId,
     aiAnalysisText, setAiAnalysisText,
     isAiAnalyzing, setIsAiAnalyzing,
+    matcherGender, setMatcherGender,
+    matcherPrimaryProfileId, setMatcherPrimaryProfileId,
+    matcherMatches, setMatcherMatches,
+    matcherSelectedMatch, setMatcherSelectedMatch,
+    isMatcherLoading,
 
     recommendTargetId, setRecommendTargetId,
 
@@ -1331,6 +1476,8 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     handleDeleteJobCategory,
     newJobCategoryName, setNewJobCategoryName,
     isNewJobCategoryOpen, setIsNewJobCategoryOpen,
+    handleUpdateProfileData,
+    isSavingProfile,
     handleAiAdvisory
   };
 

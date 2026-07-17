@@ -53,6 +53,8 @@ async def update_matrix(payload: MatrixUpdatePayload):
                 "isCustomized": True
             }
         )
+    from porutham_engine import clear_astro_cache
+    clear_astro_cache()
     return {"matrix": record.matrix, "isCustomized": record.isCustomized, "message": "Matrix updated successfully"}
 
 @router.post("/reset")
@@ -74,4 +76,6 @@ async def reset_matrix():
                 "isCustomized": False
             }
         )
+    from porutham_engine import clear_astro_cache
+    clear_astro_cache()
     return {"matrix": record.matrix, "isCustomized": record.isCustomized, "message": "Matrix reset to default standard values"}

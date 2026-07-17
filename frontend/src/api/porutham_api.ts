@@ -19,3 +19,11 @@ export async function updatePorutham(
 ): Promise<PoruthamConfig> {
   return api.put(`/api/poruthams/${id}`, payload);
 }
+
+export async function getMatchCandidates(profileId: string): Promise<any[]> {
+  return api.get(`/api/poruthams/match-candidates?profile_id=${profileId}`);
+}
+
+export async function calculateTwoStars(brideStar: string, groomStar: string): Promise<any> {
+  return api.get(`/api/poruthams/calculate?bride_star=${encodeURIComponent(brideStar)}&groom_star=${encodeURIComponent(groomStar)}`);
+}
