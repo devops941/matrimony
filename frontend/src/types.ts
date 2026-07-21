@@ -7,6 +7,9 @@ export interface ProfileExpectations {
   acceptedLocations: string[];
   goldExpectedSovereigns?: number;
   houseOwnedRequired?: boolean;
+  minHeight?: string;
+  maxHeight?: string;
+  preferredEducation?: string;
 }
 
 export interface Profile {
@@ -17,6 +20,18 @@ export interface Profile {
   gender: 'Male' | 'Female';
   age: number;
   height: string;
+  weight?: string;
+  bloodGroup?: string;
+  maritalStatus?: string;
+  diet?: string;
+  motherTongue?: string;
+  fatherName?: string;
+  fatherOccupation?: string;
+  motherName?: string;
+  motherOccupation?: string;
+  siblings?: number;
+  contactNumber?: string;
+  email?: string;
   location: string;
   community: string;
   nakshatra: string;
