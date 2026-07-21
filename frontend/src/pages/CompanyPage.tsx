@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../store/AppContext';
 import { getCompanyProfile, createCompanyProfile, updateCompanyProfile } from '../api/company';
 import type { CompanyProfile } from '../types';
-import { Edit, Building2, Mail, Phone, MessageCircle, MapPin, FileText, Shield, Loader2, Save, X, Upload, CheckCircle2 } from 'lucide-react';
+import { Edit, Building2, Mail, Phone, MessageCircle, MapPin, FileText, Shield, Loader2, Save, X, Upload, CheckCircle2, Globe, Building } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import PhoneInput from '@/components/ui/phone-input';
 import LocationSelect from '@/components/ui/location-select';
 import { Primary, Surface, Success, Static, Composites } from '../theme';
+import { useI18n } from '../i18n';
+import { motion } from 'motion/react';
 
 const EMPTY: CompanyProfile = {
   companyName: '', address: '', phone: '', email: '',
@@ -18,6 +20,7 @@ const EMPTY: CompanyProfile = {
 
 const CompanyPage: React.FC = () => {
   const { currentUser, showToast } = useApp();
+  const { t } = useI18n();
   const [profile, setProfile] = useState<CompanyProfile>(EMPTY);
   const [draft, setDraft] = useState<CompanyProfile>(EMPTY);
   const [isEditing, setIsEditing] = useState(false);
@@ -82,174 +85,195 @@ const CompanyPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className={`h-8 w-8 animate-spin ${Primary.text[400]}`} />
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-w-7xl mx-auto space-y-6 p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className={`text-xl font-bold ${Surface.text[900]} tracking-tight`}>Company Profile</h2>
-          <p className={`text-xs ${Surface.text[500]} mt-0.5`}>Business identity, contact endpoints, and compliance details.</p>
-        </div>
-        {currentUser?.role === 'Admin' && (
-          <div className="flex gap-2">
-            {isEditing ? (
-              <>
-                <Button variant="outline" size="sm" onClick={() => { setDraft(profile); setIsEditing(false); }}>
-                  <X className="h-3.5 w-3.5" /> Cancel
-                </Button>
-                <Button size="sm" onClick={handleSave} disabled={saving}>
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                  <span>{hasProfile ? 'Update' : 'Create'}</span>
-                </Button>
-              </>
-            ) : (
-              <Button size="sm" onClick={() => setIsEditing(true)}>
-                <Edit className="h-3.5 w-3.5" /> <span>{hasProfile ? 'Edit Profile' : 'Setup Profile'}</span>
-              </Button>
-            )}
-          </div>
-        )}
+    <div className="min-h-screen bg-slate-50/50">
+      {/* Top Background Banner */}
+      <div className="h-48 md:h-64 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 w-full relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
       </div>
+      
+      <div className="max-w-5xl mx-auto px-6 lg:px-8 -mt-24 relative z-10 pb-12">
+        
+        {/* Main Content Card */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+          
+          {/* Header section with Logo & Actions */}
+          <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100">
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
+              {/* Profile Avatar / Logo */}
+              <div className="relative group">
+                <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl bg-white border-4 border-white shadow-md overflow-hidden flex items-center justify-center relative z-10">
+                  {profile.companyLogoUrl && !isEditing ? (
+                    <img src={profile.companyLogoUrl} alt="Company Logo" className="w-full h-full object-contain p-2 bg-slate-50" />
+                  ) : draft.companyLogoUrl && isEditing ? (
+                    <img src={draft.companyLogoUrl} alt="Draft Logo" className="w-full h-full object-contain p-2 bg-slate-50" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-50 flex items-center justify-center">
+                      <Building2 className="w-12 h-12 text-slate-300" />
+                    </div>
+                  )}
+                  {isEditing && (
+                    <label className="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <input type="file" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) handleLogoUpload(e.target.files[0]); }} className="hidden" />
+                      <Upload className="text-white w-8 h-8" />
+                    </label>
+                  )}
+                </div>
+              </div>
+              
+              <div className="pb-2">
+                <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                  {hasProfile ? profile.companyName : t('companyTitle')}
+                </h1>
+                <p className="text-sm text-slate-500 mt-1.5 font-medium">{hasProfile ? profile.city || profile.address : t('companySubtitle')}</p>
+              </div>
+            </div>
 
-      {!hasProfile && !isEditing ? (
-        <div className={`${Composites.cardDark} flex flex-col items-center justify-center py-20 text-center`}>
-          <div className={`p-4 rounded-full ${Primary.opacity.bg_10} mb-4`}>
-            <Building2 className={`h-10 w-10 ${Primary.text[400]}`} />
-          </div>
-          <h3 className={`text-lg font-bold ${Surface.text[800]}`}>No Company Profile Found</h3>
-          <p className={`text-sm ${Surface.text[500]} mt-1 max-w-sm`}>Set up your company profile to display business information across the platform.</p>
-          {currentUser?.role === 'Admin' && (
-            <Button className="mt-6" onClick={() => setIsEditing(true)}>
-              <Edit className="h-3.5 w-3.5" /> Setup Profile
-            </Button>
-          )}
-        </div>
-      ) : !isEditing ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className={`bg-gradient-to-br from-slate-900 to-indigo-950 p-8 rounded-2xl ${Static.textWhite} flex flex-col justify-between h-fit`}>
-            
-            {profile.companyLogoUrl ? (
-              <div className="flex items-center justify-center bg-white rounded-lg p-8 mb-8">
-                <img src={profile.companyLogoUrl} alt="Company Logo" className={`h-32 w-32 object-contain`} />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center bg-slate-800 rounded-lg p-8 mb-8">
-                <Building2 className={`h-16 w-16 ${Primary.text[400]}`} />
-              </div>
-            )}
-            
-            <div className={`space-y-4 text-xs ${Primary.text[100]}`}>
-              <div>
-                <span className={`text-[9px] uppercase font-extrabold ${Primary.text[300]} tracking-wider mb-2 block`}>Company Details</span>
-                <div className="flex items-start gap-2">
-                  <Building2 className={`h-4 w-4 ${Primary.text[400]} shrink-0 mt-1`} />
-                  <span className="text-sm">{profile.incorporationDetails || '—'}</span>
-                </div>
-              </div>
-              <div>
-                <span className={`text-[9px] uppercase font-extrabold ${Primary.text[300]} tracking-wider mb-2 block`}>GST</span>
-                <div className="flex items-start gap-2">
-                  <FileText className={`h-4 w-4 ${Primary.text[400]} shrink-0 mt-1`} />
-                  <span className="text-sm">{profile.gstNumber || '—'}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={`${Composites.cardDark} lg:col-span-2 p-8 space-y-6`}>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <CompanyInfoField icon={<Building2 className={`h-5 w-5 ${Primary.text[400]}`} />} label="COMPANY NAME" value={profile.companyName} />
-                <CompanyInfoField icon={<Mail className={`h-5 w-5 ${Primary.text[400]}`} />} label="EMAIL ADDRESS" value={profile.email} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <CompanyInfoField icon={<Phone className={`h-5 w-5 ${Primary.text[400]}`} />} label="PHONE" value={profile.phone} />
-                <CompanyInfoField icon={<MessageCircle className={`h-5 w-5 ${Success.text[500]}`} />} label="WHATSAPP" value={profile.whatsappNumber} accent />
-              </div>
-              <div className={`border-t ${Surface.border[100]}`} />
-              <CompanyInfoField icon={<MapPin className={`h-5 w-5 ${Primary.text[400]}`} />} label="HEADQUARTERS" value={profile.address} full />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <CompanyInfoField icon={<MapPin className={`h-5 w-5 ${Primary.text[400]}`} />} label="CITY" value={profile.city || ''} />
-                <CompanyInfoField icon={<MapPin className={`h-5 w-5 ${Primary.text[400]}`} />} label="STATE" value={profile.state || ''} />
-                <CompanyInfoField icon={<MapPin className={`h-5 w-5 ${Primary.text[400]}`} />} label="COUNTRY" value={profile.country || ''} />
-              </div>
-            </div>
-            
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className={`${Composites.cardDark} space-y-5`}>
-          <h3 className={`font-bold text-sm ${Surface.text[900]} border-b ${Surface.border[100]} pb-2`}>
-            {hasProfile ? 'Edit Company Details' : 'Create Company Profile'}
-          </h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Field label="Company Name" value={draft.companyName} onChange={(v) => setDraft({ ...draft, companyName: v })} required />
-              <Field label="Email" value={draft.email} onChange={(v) => setDraft({ ...draft, email: v })} type="email" required />
-              <PhoneInput label="Phone" value={draft.phone} onChange={(v) => setDraft({ ...draft, phone: v })} required />
-            </div>
-            <Field label="Address" value={draft.address} onChange={(v) => setDraft({ ...draft, address: v })} required />
-            <LocationSelect
-              country={draft.country || ''}
-              state={draft.state || ''}
-              city={draft.city || ''}
-              onCountryChange={(name) => setDraft({ ...draft, country: name })}
-              onStateChange={(name) => setDraft({ ...draft, state: name })}
-              onCityChange={(name) => setDraft({ ...draft, city: name })}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <PhoneInput label="WhatsApp Number" value={draft.whatsappNumber} onChange={(v) => setDraft({ ...draft, whatsappNumber: v })} required />
-              <Field label="GST Number" value={draft.gstNumber} onChange={(v) => setDraft({ ...draft, gstNumber: v })} required />
-            </div>
-            <Field label="Incorporation Details" value={draft.incorporationDetails} onChange={(v) => setDraft({ ...draft, incorporationDetails: v })} required />
-            <div className="space-y-1">
-              <Label className={Composites.filterLabel}>Company Logo</Label>
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <input type="file" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) handleLogoUpload(e.target.files[0]); }}
-                    className="hidden" id="logo-upload" />
-                  <label htmlFor="logo-upload" className={`flex items-center gap-2 ${Surface[50]} border ${Surface.border[200]} rounded-lg p-2 text-xs ${Surface.text[800]} font-semibold cursor-pointer hover:border-indigo-300 transition-colors`}>
-                    <Upload className={`h-3.5 w-3.5 ${Surface.text[500]}`} />
-                    <span>{draft.companyLogoUrl ? 'Change logo' : 'Upload logo'}</span>
-                  </label>
-                </div>
-                {draft.companyLogoUrl && (
-                  <div className="flex items-center gap-2">
-                    <img src={draft.companyLogoUrl} alt="Logo preview" className="h-10 w-10 object-contain rounded border" />
-                    <p className={`text-[10px] ${Success.text[600]} flex items-center gap-1`}><CheckCircle2 className="h-3 w-3" /> Logo set</p>
+            {/* Action Buttons */}
+            {currentUser?.role === 'Admin' && (
+              <div className="flex justify-center pb-2">
+                {isEditing ? (
+                  <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <button onClick={() => { setDraft(profile); setIsEditing(false); }} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors">
+                      Cancel
+                    </button>
+                    <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      {hasProfile ? 'Save Changes' : 'Create Profile'}
+                    </button>
                   </div>
+                ) : (
+                  <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl shadow-sm transition-all">
+                    <Edit className="w-4 h-4 text-slate-500" /> 
+                    {hasProfile ? 'Edit Profile' : 'Setup Profile'}
+                  </button>
                 )}
               </div>
-            </div>
+            )}
           </div>
-        </form>
-      )}
+
+          {/* Form or Display View */}
+          <div className="p-6 md:p-8 bg-slate-50/30">
+            {!hasProfile && !isEditing ? (
+              <div className="py-16 text-center">
+                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Building className="w-8 h-8 text-indigo-500" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">Your profile is empty</h3>
+                <p className="text-sm text-slate-500 max-w-md mx-auto mt-2">Add your business identity, contact details, and compliance information to display it across the platform.</p>
+                {currentUser?.role === 'Admin' && (
+                  <button onClick={() => setIsEditing(true)} className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all mx-auto">
+                    <Edit className="w-4 h-4" /> Setup Profile Now
+                  </button>
+                )}
+              </div>
+            ) : !isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                {/* Contact Info Card */}
+                <div className="col-span-1 md:col-span-2 space-y-6">
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Contact Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <InfoField icon={<Mail className="w-5 h-5 text-indigo-500" />} label="Email Address" value={profile.email} />
+                    <InfoField icon={<Phone className="w-5 h-5 text-indigo-500" />} label="Phone Number" value={profile.phone} />
+                    <InfoField icon={<MessageCircle className="w-5 h-5 text-emerald-500" />} label="WhatsApp Support" value={profile.whatsappNumber} accent />
+                    <InfoField icon={<Globe className="w-5 h-5 text-indigo-500" />} label="Headquarters" value={profile.address} />
+                  </div>
+
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2 mt-8">Location Details</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <InfoField icon={<MapPin className="w-4 h-4 text-slate-400" />} label="City" value={profile.city} smallIcon />
+                    <InfoField icon={<MapPin className="w-4 h-4 text-slate-400" />} label="State" value={profile.state || 'Not Set'} smallIcon />
+                    <InfoField icon={<MapPin className="w-4 h-4 text-slate-400" />} label="Country" value={profile.country || 'Not Set'} smallIcon />
+                  </div>
+                </div>
+
+                {/* Compliance / Registration Card */}
+                <div className="col-span-1 space-y-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-indigo-500" /> Compliance
+                  </h3>
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Registration Details</p>
+                      <p className="text-sm font-semibold text-slate-800">{profile.incorporationDetails || 'Not specified'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">GST Number</p>
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-400" />
+                        <p className="text-sm font-semibold text-slate-800 font-mono bg-white px-2 py-1 border border-slate-200 rounded">{profile.gstNumber || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">Business Basics</h3>
+                    <Field label="Company Name" value={draft.companyName} onChange={(v) => setDraft({ ...draft, companyName: v })} required />
+                    <Field label="Email Address" value={draft.email} onChange={(v) => setDraft({ ...draft, email: v })} type="email" required />
+                    <PhoneInput label="Phone Number" value={draft.phone} onChange={(v) => setDraft({ ...draft, phone: v })} required />
+                    <PhoneInput label="WhatsApp Support" value={draft.whatsappNumber} onChange={(v) => setDraft({ ...draft, whatsappNumber: v })} required />
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">Location</h3>
+                    <Field label="Street Address" value={draft.address} onChange={(v) => setDraft({ ...draft, address: v })} required />
+                    <LocationSelect
+                      country={draft.country || ''}
+                      state={draft.state || ''}
+                      city={draft.city || ''}
+                      onCountryChange={(name) => setDraft({ ...draft, country: name })}
+                      onStateChange={(name) => setDraft({ ...draft, state: name })}
+                      onCityChange={(name) => setDraft({ ...draft, city: name })}
+                    />
+                  </div>
+                </div>
+                
+                <div className="border-t border-slate-200 pt-8">
+                  <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-6">Compliance & Legal</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Field label="Incorporation Details" value={draft.incorporationDetails} onChange={(v) => setDraft({ ...draft, incorporationDetails: v })} required />
+                    <Field label="GST Number" value={draft.gstNumber} onChange={(v) => setDraft({ ...draft, gstNumber: v })} required />
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
 
-function CompanyInfoField({ icon, label, value, accent, full }: { icon: React.ReactNode; label: string; value: string; accent?: boolean; full?: boolean }) {
+function InfoField({ icon, label, value, accent, smallIcon }: { icon: React.ReactNode; label: string; value: string; accent?: boolean; smallIcon?: boolean }) {
   return (
-    <div className={`space-y-2 ${full ? 'sm:col-span-2' : ''}`}>
-      <div className="flex items-center gap-2">
+    <div className="space-y-1.5 flex items-start gap-3">
+      <div className={`mt-0.5 ${smallIcon ? '' : 'p-2 bg-slate-50 rounded-lg border border-slate-100'}`}>
         {icon}
-        <span className={`text-xs font-bold uppercase tracking-wide ${Primary.text[400]}`}>{label}</span>
       </div>
-      <p className={`text-base font-semibold ${accent ? Success.text[600] : Surface.text[800]}`}>{value || '—'}</p>
+      <div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+        <p className={`text-sm font-semibold ${accent ? 'text-emerald-600' : 'text-slate-800'}`}>{value || '—'}</p>
+      </div>
     </div>
   );
 }
 
 function Field({ label, value, onChange, type = 'text', required = false }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean }) {
   return (
-    <div className="space-y-1">
-      <Label className={Composites.filterLabel}>{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</Label>
       <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required}
-        className={`${Surface[50]} rounded-md border ${Surface.border[200]} bg-transparent px-3 py-2 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-300`} />
+        className="bg-slate-50/50 rounded-lg border-slate-200 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 py-2.5 text-sm font-medium shadow-sm transition-all" />
     </div>
   );
 }

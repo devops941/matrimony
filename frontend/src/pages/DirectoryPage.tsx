@@ -1,14 +1,17 @@
 import React from 'react';
 import { useApp } from '../store/AppContext';
-import { Users, Plus, Search, Edit, Trash2, Check, Briefcase, MapPin } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Check, Briefcase, MapPin, Star } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import { NAKSHATRAS } from '../porutham';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Primary, Surface, Success, Warning, Danger, Gender, Static, Composites } from '../theme';
+import { useI18n } from '../i18n';
+import { motion } from 'motion/react';
 
 const DirectoryPage = () => {
+  const { t } = useI18n();
   const {
     profiles,
     handleUpdateProfileData,
@@ -37,40 +40,57 @@ const DirectoryPage = () => {
     showToast,
   } = useApp();
 
-  return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
-      
-      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${Composites.pageHeader}`}>
-        <div>
-          <h2 className={`text-xl md:text-2xl font-bold ${Surface.text[900]} tracking-tight`}>Matrimonial Database Directory</h2>
-          <p className={`text-xs ${Surface.text[500]} mt-1`}>Manage, filter, add, edit, or delete male and female client particulars.</p>
-        </div>
-        <Button onClick={handleOpenAddForm}>
-          <Plus className="h-4 w-4" />
-          <span>Add New Candidate</span>
-        </Button>
-      </div>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
 
-      <div className={Composites.filterBar}>
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
+  };
+
+  return (
+    <div className="p-6 md:p-10 space-y-6 max-w-7xl mx-auto w-full min-h-screen bg-slate-50/50">
+      
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4`}>
+        <div>
+          <h2 className={`text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight`}>{t('directoryTitle')}</h2>
+          <p className={`text-sm text-slate-500 mt-1.5 font-medium`}>{t('directorySubtitle')}</p>
+        </div>
+        <button
+          onClick={handleOpenAddForm}
+          className={`flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all`}
+        >
+          <Plus className="h-4 w-4" />
+          <span>New Profile</span>
+        </button>
+      </motion.div>
+
+      {/* Filter Bar */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-5">
         
         <div className="relative">
-          <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 ${Surface.text[400]} pointer-events-none`} />
+          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none`} />
           <Input
             placeholder="Search by name, education, city, or profession..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className={`${Surface[50]} pl-10 rounded-xl h-10`}
+            className={`bg-slate-50/50 pl-11 rounded-xl h-12 text-sm font-medium border-slate-200 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all shadow-sm`}
           />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-          <div className="space-y-1">
-            <label className={Composites.filterLabel}>Gender</label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Gender</label>
             <Select value={genderFilter} onValueChange={(val) => setGenderFilter(val as any)}>
-              <SelectTrigger size="sm" className={Surface[50]}>
+              <SelectTrigger className="bg-slate-50/50 h-10 border-slate-200 focus:ring-indigo-400 rounded-lg text-sm font-medium">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                 <SelectItem value="All">All Genders</SelectItem>
                 <SelectItem value="Male">Male</SelectItem>
                 <SelectItem value="Female">Female</SelectItem>
@@ -78,52 +98,52 @@ const DirectoryPage = () => {
             </Select>
           </div>
 
-          <div className="space-y-1">
-            <label className={Composites.filterLabel}>Community</label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Community</label>
             <Select value={communityFilter} onValueChange={(val) => val !== null && setCommunityFilter(val)}>
-              <SelectTrigger size="sm" className={Surface[50]}>
+              <SelectTrigger className="bg-slate-50/50 h-10 border-slate-200 focus:ring-indigo-400 rounded-lg text-sm font-medium">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg max-h-64">
                 <SelectItem value="All">All Communities</SelectItem>
                 {uniqueCommunities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1">
-            <label className={Composites.filterLabel}>Location</label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Location</label>
             <Select value={locationFilter} onValueChange={(val) => val !== null && setLocationFilter(val)}>
-              <SelectTrigger size="sm" className={Surface[50]}>
+              <SelectTrigger className="bg-slate-50/50 h-10 border-slate-200 focus:ring-indigo-400 rounded-lg text-sm font-medium">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg max-h-64">
                 <SelectItem value="All">All Cities</SelectItem>
                 {uniqueLocations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1">
-            <label className={Composites.filterLabel}>Star (Nakshatra)</label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Star</label>
             <Select value={starFilter} onValueChange={(val) => val !== null && setStarFilter(val)}>
-              <SelectTrigger size="sm" className={Surface[50]}>
+              <SelectTrigger className="bg-slate-50/50 h-10 border-slate-200 focus:ring-indigo-400 rounded-lg text-sm font-medium">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg max-h-64">
                 <SelectItem value="All">All Stars</SelectItem>
                 {uniqueStars.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 space-y-1">
-            <label className={Composites.filterLabel}>Chevvai Dosham</label>
+          <div className="col-span-2 sm:col-span-1 space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Chevvai Dosham</label>
             <Select value={chevvaiFilter} onValueChange={(val) => val !== null && setChevvaiFilter(val)}>
-              <SelectTrigger size="sm" className={Surface[50]}>
+              <SelectTrigger className="bg-slate-50/50 h-10 border-slate-200 focus:ring-indigo-400 rounded-lg text-sm font-medium">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg max-h-64">
                 <SelectItem value="All">All Statuses</SelectItem>
                 <SelectItem value="Yes">Dosham Present</SelectItem>
                 <SelectItem value="No">No Dosham</SelectItem>
@@ -132,12 +152,16 @@ const DirectoryPage = () => {
             </Select>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* Profiles Grid */}
+      <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProfiles.length === 0 ? (
-          <div className={`col-span-full ${Static.white} border ${Surface.border[200]} p-12 rounded-2xl text-center space-y-3`}>
-            <p className={`text-sm font-semibold ${Surface.text[400]}`}>No profile matches found with the active filters.</p>
+          <div className={`col-span-full bg-white border border-slate-200 border-dashed p-16 rounded-3xl text-center space-y-4 shadow-sm`}>
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Search className="w-6 h-6 text-slate-300" />
+            </div>
+            <p className={`text-base font-semibold text-slate-600`}>No profiles match your active filters.</p>
             <button
               onClick={() => {
                 setSearchQuery('');
@@ -147,73 +171,78 @@ const DirectoryPage = () => {
                 setStarFilter('All');
                 setChevvaiFilter('All');
               }}
-              className={`text-xs ${Primary.text[600]} font-bold underline`}
+              className={`text-sm text-indigo-600 hover:text-indigo-800 font-bold transition-colors`}
             >
-              Reset all filters
+              Clear all filters
             </button>
           </div>
         ) : (
           filteredProfiles.map(p => (
-            <div
+            <motion.div
+              variants={itemVariants}
               key={p.id}
               onClick={() => setSelectedProfileId(p.id)}
-              className={`rounded-2xl border p-5 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-4 group relative ${
+              className={`rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-5 group relative overflow-hidden bg-white ${
                 p.approvedByAdmin 
-                  ? `${Success.opacity.bg_50_60} ${Success.border[300]} shadow-sm ${Success.opacity.shadow_100_20}` 
-                  : `${Static.white} ${Surface.opacity.bd_200_80}`
+                  ? `border-emerald-200/60 shadow-sm` 
+                  : `border-slate-200/60`
               }`}
             >
-              <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-3.5">
-                  <Avatar type={p.avatarUrl} className="h-12 w-12" />
+              {p.approvedByAdmin && (
+                <div className="absolute top-0 right-0 w-2 h-full bg-emerald-400 opacity-20"></div>
+              )}
+              
+              <div className="flex justify-between items-start relative z-10">
+                <div className="flex items-center space-x-4">
+                  <Avatar type={p.avatarUrl} className="h-14 w-14 border-2 border-white shadow-sm ring-1 ring-slate-100" />
                   <div>
-                    <h4 className={`font-bold ${Surface.text[900]} ${Primary.hover.text[600]} transition text-sm`}>
+                    <h4 className={`font-bold text-slate-800 group-hover:text-indigo-600 transition-colors text-base tracking-tight`}>
                       {p.name}
                     </h4>
-                    <p className={`text-[10px] ${Surface.text[400]} mt-0.5`}>{p.registrationId || p.id} • {p.gender} • {p.age} yrs</p>
+                    <p className={`text-xs text-slate-500 mt-1 font-medium`}>{p.registrationId || p.id.substring(0,6)} • {p.age} yrs</p>
                   </div>
                 </div>
-                <div className="flex flex-col items-end space-y-1">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    p.gender === 'Male' ? `${Gender.male[50]} ${Gender.male.text[700]} border ${Gender.male[100]}` : `${Gender.female[50]} ${Gender.female.text[700]} border ${Gender.female[100]}`
+                <div className="flex flex-col items-end space-y-2">
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                    p.gender === 'Male' ? `bg-blue-50 text-blue-700 border border-blue-200` : `bg-pink-50 text-pink-700 border border-pink-200`
                   }`}>
                     {p.gender}
                   </span>
                   {p.confirmedMatchedWith && (
-                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${Danger[50]} ${Danger.text[700]} border ${Danger.border[100]} uppercase tracking-wide`}>
-                      Married / Paired
+                    <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wide`}>
+                      Paired
                     </span>
                   )}
                 </div>
               </div>
 
-              <p className={`text-xs ${Surface.text[500]} leading-relaxed line-clamp-2 italic`}>
-                "{p.bio}"
+              <p className={`text-sm text-slate-500 leading-relaxed line-clamp-2 italic relative z-10`}>
+                "{p.bio || "Looking for a suitable match."}"
               </p>
 
-              <div className={`grid grid-cols-2 gap-y-2 gap-x-1.5 text-[11px] font-medium border-t border-b ${Surface.border[100]} py-3 ${Surface.text[600]}`}>
-                <div className="flex items-center space-x-1.5 min-w-0">
-                  <Briefcase className={`h-3.5 w-3.5 ${Surface.text[400]} shrink-0`} />
-                  <span className="truncate">{p.jobType}</span>
+              <div className={`grid grid-cols-2 gap-y-3 gap-x-2 text-xs font-medium border-t border-b border-slate-100 py-4 text-slate-600 relative z-10`}>
+                <div className="flex items-center space-x-2 min-w-0">
+                  <Briefcase className={`h-4 w-4 text-slate-400 shrink-0`} />
+                  <span className="truncate">{p.jobType || 'Not specified'}</span>
                 </div>
-                <div className="flex items-center space-x-1.5 min-w-0">
-                  <MapPin className={`h-3.5 w-3.5 ${Surface.text[400]} shrink-0`} />
-                  <span className="truncate">{p.location}</span>
+                <div className="flex items-center space-x-2 min-w-0">
+                  <MapPin className={`h-4 w-4 text-slate-400 shrink-0`} />
+                  <span className="truncate">{p.location || 'Unknown'}</span>
                 </div>
-                <div className="flex items-center space-x-1.5 min-w-0 col-span-2">
-                  <span className={`font-semibold ${Surface.text[400]} uppercase tracking-wide text-[9px] mr-1`}>Rasi/Star:</span>
-                  <span className={`truncate ${Surface.text[800]}`}>{p.rasi} • {p.nakshatra}</span>
+                <div className="flex items-center space-x-2 min-w-0 col-span-2">
+                  <Star className="h-4 w-4 text-slate-400 shrink-0" />
+                  <span className={`truncate text-slate-700`}>{p.rasi || 'Unknown Rasi'} • {p.nakshatra || 'Unknown Star'}</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-bold ${Primary.text[600]}`}>
-                  Rs {p.annualIncomeLakhs} Lakhs / yr
+              <div className="flex items-center justify-between relative z-10">
+                <span className={`text-sm font-extrabold text-indigo-600`}>
+                  ₹{p.annualIncomeLakhs}L<span className="text-xs font-medium text-slate-400">/yr</span>
                 </span>
 
                 <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                   {currentUser?.role === 'Admin' ? (
-                    <label className={`flex items-center space-x-1.5 cursor-pointer select-none ${Surface[100]} ${Surface.hover.bg[200]} px-2 py-1 rounded-lg transition mr-1.5`} title="Toggle Admin Approval Check">
+                    <label className={`flex items-center space-x-1.5 cursor-pointer select-none bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-lg transition mr-1`} title="Toggle Admin Approval Check">
                       <input
                         type="checkbox"
                         checked={!!p.approvedByAdmin}
@@ -221,44 +250,44 @@ const DirectoryPage = () => {
                           handleUpdateProfileData(p.id, { approvedByAdmin: e.target.checked });
                           showToast(
                             e.target.checked 
-                              ? `Successfully approved candidate: ${p.name}` 
-                              : `Revoked approval for: ${p.name}`,
+                              ? `Approved: ${p.name}` 
+                              : `Revoked: ${p.name}`,
                             'info'
                           );
                         }}
-                        className={`h-3.5 w-3.5 rounded ${Success.text[600]} ${Success.focus.ring} ${Surface.border[300]}`}
+                        className={`h-3.5 w-3.5 rounded text-emerald-500 focus:ring-emerald-500 border-slate-300`}
                       />
-                      <span className={`text-[10px] font-extrabold ${Surface.text[700]}`}>Approve</span>
+                      <span className={`text-[10px] font-bold text-slate-600 uppercase tracking-wider`}>Verify</span>
                     </label>
                   ) : (
                     p.approvedByAdmin && (
-                      <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg text-[10px] font-bold ${Success[100]} ${Success.text[800]} border ${Success.border[200]} mr-1.5`}>
+                      <span className={`inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 mr-1`}>
                         <Check className="h-3.5 w-3.5" />
-                        <span>Approved</span>
+                        <span>Verified</span>
                       </span>
                     )
                   )}
 
                   <button
                     onClick={(e) => handleOpenEditForm(p, e)}
-                    className={`p-1.5 ${Surface.text[400]} ${Primary.hover.text[600]} ${Surface.hover.bg[50]} rounded-lg transition`}
-                    title="Edit candidate profile details"
+                    className={`p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-100 rounded-lg transition`}
+                    title="Edit profile"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={(e) => handleDeleteProfile(p.id, e)}
-                    className={`p-1.5 ${Surface.text[400]} ${Danger.hover.text[600]} ${Surface.hover.bg[50]} rounded-lg transition`}
-                    title="Delete profile from database"
+                    className={`p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 rounded-lg transition`}
+                    title="Delete profile"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

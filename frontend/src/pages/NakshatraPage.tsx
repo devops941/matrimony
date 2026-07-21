@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { getNakshatraMatrix, updateNakshatraMatrix, resetNakshatraMatrix } from "@/api/nakshatra";
 import { calculateTwoStars } from "@/api/porutham_api";
+import { motion, AnimatePresence } from 'motion/react';
+import { useI18n } from '../i18n';
+import { FileUp, RefreshCw, Star, Info, CheckCircle, Upload, ShieldAlert } from 'lucide-react';
 
 // ---- Data: 12 Rashis, each split into 3 nakshatra-pada segments (36 columns/rows total) ----
 const RASHIS = [
@@ -19,13 +22,10 @@ const RASHIS = [
   { name: "மீனம்", stars: ["பூரட்டாதி 4", "உத்திரட்டாதி", "ரேவதி"] },
 ];
 
-// Flatten into 36 (rashiIndex, starIndex, label) entries
 const STAR_ROWS = RASHIS.flatMap((r, ri) =>
   r.stars.map((s, si) => ({ rashi: r.name, rashiIndex: ri, star: s, isFirstOfGroup: si === 0 }))
 );
 
-// ---- Real porutham matrix, transcribed exactly from the source Excel sheet ----
-// Row i / Col j follow the same order as STAR_ROWS above (36 x 36).
 const REAL_MATRIX = [
   [24, 21, 32, 20, 20, 20, 18, 11, 11, 15, 14, 19, 19, 26, 25, 16, 16, 10, 22, 25, 22, 24, 32, 19, 15, 30, 29, 23, 26, 18, 19, 16, 15, 20, 31, 31],
   [23, 24, 28, 16, 20, 13, 12, 18, 21, 24, 15, 18, 21, 16, 26, 27, 25, 11, 14, 28, 22, 24, 23, 26, 25, 20, 31, 26, 24, 10, 11, 19, 25, 29, 23, 33],
@@ -65,18 +65,15 @@ const REAL_MATRIX = [
   [23, 23, 11, 7, 7, 19, 19, 16, 20, 24, 14, 8, 18, 29, 30, 26, 25, 20, 20, 17, 12, 32, 24, 19, 28, 31, 21, 21, 23, 21, 22, 25, 30, 33, 24, 29],
 ];
 
-// ---- Excel upload support -------------------------------------------------
-// Expects the same layout as the source template: title rows 1-2, rashi/star
-// name columns A-B, and the 36x36 number grid starting at cell C3 (through AL38).
 function extractMatrixFromWorkbook(workbook: XLSX.WorkBook): number[][] {
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
   if (!sheet) throw new Error("Excel வொர்க்புக்கில் shet கிடைக்கவில்லை.");
 
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null }) as (unknown[])[];
-  const n = STAR_ROWS.length; // 36
-  const ROW_START = 2; // 0-indexed -> spreadsheet row 3
-  const COL_START = 2; // 0-indexed -> spreadsheet column C
+  const n = STAR_ROWS.length; 
+  const ROW_START = 2; 
+  const COL_START = 2; 
 
   const matrix: number[][] = [];
   for (let i = 0; i < n; i++) {
@@ -86,9 +83,7 @@ function extractMatrixFromWorkbook(workbook: XLSX.WorkBook): number[][] {
       const raw = srcRow[COL_START + j];
       const num = typeof raw === "number" ? raw : parseFloat(String(raw));
       if (!Number.isFinite(num)) {
-        throw new Error(
-          `வரிசை ${i + 1}, நெடுவரிசை ${j + 1}: எண் எதிர்பார்க்கப்பட்டது, ஆனால் "${raw}" கிடைத்தது.`
-        );
+        throw new Error(`வரிசை ${i + 1}, நெடுவரிசை ${j + 1}: எண் எதிர்பார்க்கப்பட்டது, ஆனால் "${raw}" கிடைத்தது.`);
       }
       row.push(num);
     }
@@ -97,20 +92,20 @@ function extractMatrixFromWorkbook(workbook: XLSX.WorkBook): number[][] {
   return matrix;
 }
 
-const COL_W = 44; // px per data column
-const ROW_LABEL1_W = 90; // rashi name column
-const ROW_LABEL2_W = 130; // star name column
-const HEAD_ROW1_H = 32; // px, rashi header row
-const HEAD_ROW2_H = 50; // px, star header row
+const COL_W = 46; 
+const ROW_LABEL1_W = 90; 
+const ROW_LABEL2_W = 140; 
+const HEAD_ROW1_H = 34; 
+const HEAD_ROW2_H = 50; 
 
-// same array contents regardless of order? we only ever build ascending ranges, so simple compare is fine
-function sameSet(a, b) {
+function sameSet(a: any, b: any) {
   if (!a || !b || a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
   return true;
 }
 
 export default function NakshatraPoruthamTable() {
+  const { t } = useI18n();
   const [matrix, setMatrix] = useState<number[][]>(REAL_MATRIX);
   const [loading, setLoading] = useState(true);
   const [uploadError, setUploadError] = useState("");
@@ -137,9 +132,9 @@ export default function NakshatraPoruthamTable() {
     loadMatrix();
   }, []);
 
-  const handleExcelChange = (e) => {
+  const handleExcelChange = (e: any) => {
     const file = e.target.files && e.target.files[0];
-    e.target.value = ""; // allow re-selecting the same file later
+    e.target.value = "";
     if (!file) return;
 
     const isExcel = /\.(xlsx|xls)$/i.test(file.name);
@@ -191,28 +186,26 @@ export default function NakshatraPoruthamTable() {
     }
   };
 
-  // Selection state: arrays of row/col indices currently highlighted.
-  // A single star click -> [index]. A rashi-group click -> all 3 indices of that group.
   const [selRows, setSelRows] = useState<number[] | null>(null);
   const [selCols, setSelCols] = useState<number[] | null>(null);
 
-  const cellBg = (val) => {
-    if (val >= 30) return "#eaf6ec";
-    if (val <= 10) return "#fdecec";
+  const cellBg = (val: number) => {
+    if (val >= 30) return "#d1fae5"; // emerald-100
+    if (val <= 10) return "#ffe4e6"; // rose-100
     return "#ffffff";
   };
 
   const rowIndicesForRashi = (rashiIndex: number): number[] =>
     STAR_ROWS.reduce<number[]>((acc, s, i) => (s.rashiIndex === rashiIndex ? [...acc, i] : acc), []);
 
-  const toggleRows = (indices) => setSelRows((prev) => (sameSet(prev, indices) ? null : indices));
-  const toggleCols = (indices) => setSelCols((prev) => (sameSet(prev, indices) ? null : indices));
+  const toggleRows = (indices: number[]) => setSelRows((prev) => (sameSet(prev, indices) ? null : indices));
+  const toggleCols = (indices: number[]) => setSelCols((prev) => (sameSet(prev, indices) ? null : indices));
 
-  const clickStarRow = (ri) => toggleRows([ri]);
-  const clickRashiRow = (rashiIndex) => toggleRows(rowIndicesForRashi(rashiIndex));
-  const clickStarCol = (ci) => toggleCols([ci]);
-  const clickRashiCol = (rashiIndex) => toggleCols(rowIndicesForRashi(rashiIndex));
-  const clickCell = (ri, ci) => {
+  const clickStarRow = (ri: number) => toggleRows([ri]);
+  const clickRashiRow = (rashiIndex: number) => toggleRows(rowIndicesForRashi(rashiIndex));
+  const clickStarCol = (ci: number) => toggleCols([ci]);
+  const clickRashiCol = (rashiIndex: number) => toggleCols(rowIndicesForRashi(rashiIndex));
+  const clickCell = (ri: number, ci: number) => {
     if (selRows && selRows.length === 1 && selRows[0] === ri && selCols && selCols.length === 1 && selCols[0] === ci) {
       setSelRows(null);
       setSelCols(null);
@@ -222,7 +215,7 @@ export default function NakshatraPoruthamTable() {
     }
   };
 
-  const describeSelection = (indices) => {
+  const describeSelection = (indices: number[] | null) => {
     if (!indices) return null;
     if (indices.length === 1) return STAR_ROWS[indices[0]].star;
     return RASHIS[STAR_ROWS[indices[0]].rashiIndex].name;
@@ -257,436 +250,358 @@ export default function NakshatraPoruthamTable() {
   }, [selRows, selCols, singlePick]);
 
   return (
-    <div style={{ fontFamily: "'Noto Sans Tamil', 'Latha', sans-serif", background: "#f6f7f8", padding: 16 }}>
+    <div className="p-6 md:p-8 space-y-6 max-w-[95vw] mx-auto w-full min-h-screen bg-slate-50/50">
       <style>{`
         .npt-table-wrap {
           overflow: auto;
-          max-height: 78vh;
-          border: 1px solid #8c8c8c;
-          background: #fff;
+          max-height: 75vh;
+          border-radius: 1rem;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
         }
         .npt-table {
-          border-collapse: collapse;
+          border-collapse: separate;
+          border-spacing: 0;
           table-layout: fixed;
+          width: max-content;
         }
         .npt-table th, .npt-table td {
-          border: 1px solid #b7b7b7;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
           box-sizing: border-box;
           text-align: center;
           font-size: 11px;
-          padding: 2px 3px;
-          line-height: 1.15;
+          padding: 6px 4px;
+          line-height: 1.2;
           white-space: normal;
           word-break: keep-all;
-          overflow: hidden;
         }
-        /* Sticky corner: covers both frozen columns AND both header rows */
         .npt-corner {
           position: sticky;
           left: 0;
           top: 0;
           z-index: 50;
-          background: #fbfbfb;
-          font-weight: 700;
+          background: #f8fafc;
+          font-weight: 800;
           font-size: 11px;
+          color: #475569;
           height: ${HEAD_ROW1_H + HEAD_ROW2_H}px;
         }
         .npt-col-rashi-head, .npt-col-star-head, .npt-row-rashi-label, .npt-row-star-label {
           cursor: pointer;
           user-select: none;
-          transition: background-color 0.12s ease;
+          transition: all 0.2s ease;
         }
         .npt-col-rashi-head {
           position: sticky;
           top: 0;
           z-index: 30;
-          background: #ffffff;
-          font-weight: 700;
+          background: #f8fafc;
+          font-weight: 800;
+          color: #334155;
           font-size: 12.5px;
           height: ${HEAD_ROW1_H}px;
           vertical-align: middle;
         }
         .npt-col-rashi-head:hover, .npt-row-rashi-label:hover {
-          background: #fff1d6 !important;
+          background: #eef2ff !important;
+          color: #4f46e5;
         }
         .npt-col-star-head {
           position: sticky;
           top: ${HEAD_ROW1_H}px;
           z-index: 30;
           background: #ffffff;
-          font-weight: 600;
-          color: #333;
+          font-weight: 700;
+          color: #475569;
           height: ${HEAD_ROW2_H}px;
           vertical-align: middle;
         }
         .npt-col-star-head:hover, .npt-row-star-label:hover {
-          background: #fff1d6 !important;
+          background: #eef2ff !important;
+          color: #4f46e5;
         }
         .npt-row-rashi-label {
           position: sticky;
           left: 0;
           z-index: 20;
-          background: #fbfbfb;
-          font-weight: 700;
-          color: #1a1a1a;
+          background: #f8fafc;
+          font-weight: 800;
+          color: #334155;
         }
         .npt-row-star-label {
           position: sticky;
           left: ${ROW_LABEL1_W}px;
           z-index: 20;
           background: #ffffff;
-          font-weight: 600;
-          color: #333;
-          text-align: left !important;
-          padding-left: 6px !important;
-        }
-        /* Selected header state */
-        .npt-head-selected {
-          background: #ffb703 !important;
-          color: #1a1a1a;
-        }
-        /* Selected row/column band across the data grid — !important so it
-           beats the inline per-cell background-color used for base shading */
-        .npt-row-hit {
-          background: #ffe9b8 !important;
           font-weight: 700;
+          color: #475569;
+          text-align: left !important;
+          padding-left: 10px !important;
+        }
+        .npt-head-selected {
+          background: #e0e7ff !important;
+          color: #4338ca !important;
+        }
+        .npt-row-hit {
+          background: #eef2ff !important;
+          font-weight: 800;
         }
         .npt-col-hit {
-          background: #ffe9b8 !important;
-          font-weight: 700;
+          background: #eef2ff !important;
+          font-weight: 800;
         }
         .npt-data-cell {
           cursor: pointer;
-          color: #1a1a1a;
-          transition: background-color 0.12s ease;
+          color: #334155;
+          font-weight: 600;
+          transition: all 0.15s ease;
         }
         .npt-data-cell:hover {
-          background: #ffe7b3 !important;
+          background: #c7d2fe !important;
+          color: #3730a3;
         }
-        /* The intersection cell(s) of the current row+column selection: the "matching number" */
         .npt-match-cell {
-          background: #ffb703 !important;
-          color: #7a3e00;
-          font-weight: 800;
+          background: #4f46e5 !important;
+          color: #ffffff !important;
+          font-weight: 900;
           font-size: 13px;
-          box-shadow: inset 0 0 0 2px #b56c00;
+          box-shadow: inset 0 0 0 2px #3730a3;
         }
         .npt-band-right {
-          border-right: 2px solid #6f6f6f !important;
+          border-right: 2px solid #cbd5e1 !important;
         }
         .npt-band-bottom {
-          border-bottom: 2px solid #6f6f6f !important;
+          border-bottom: 2px solid #cbd5e1 !important;
         }
       `}</style>
 
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 6 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 0 2px", color: "#222" }}>
-          நட்சத்திர பொருத்தம் அட்டவணை
-        </h2>
-
-        <div style={{ fontSize: 12.5, color: "#444", background: "#fff", border: "1px solid #ddd", borderRadius: 6, padding: "6px 10px", minWidth: 260 }}>
-          {rowLabel || colLabel ? (
-            <>
-              <strong>{rowLabel || "—"}</strong> × <strong>{colLabel || "—"}</strong>
-              {singlePick && (
-                <span style={{ marginLeft: 8, color: "#b56c00", fontWeight: 800 }}>
-                  பொருத்தம்: {pickedValue}/36
-                </span>
-              )}
-            </>
-          ) : (
-            <span style={{ color: "#888" }}>ஒரு நட்சத்திரம் (வரிசை) &amp; ஒரு நட்சத்திரம் (நெடுவரிசை) கிளிக் செய்யவும்</span>
-          )}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+            {t('nakshatraTitle')}
+          </h2>
+          <p className="text-sm text-slate-500 mt-1 font-medium">{t('nakshatraSubtitle')}</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
+
+        <div className="flex flex-wrap items-center gap-3">
           <input
             ref={fileInputRef}
             type="file"
             accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={handleExcelChange}
-            style={{ display: "none" }}
+            className="hidden"
           />
           <button
             type="button"
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
-            style={{
-              fontSize: 12.5,
-              fontWeight: 700,
-              color: "#1a1a1a",
-              background: "#ffffff",
-              border: "1px solid #8c8c8c",
-              borderRadius: 6,
-              padding: "6px 12px",
-              cursor: "pointer",
-            }}
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all"
           >
-            📄 Excel பதிவேற்றம் (.xlsx / .xls)
+            <Upload className="h-4 w-4 text-indigo-500" /> Excel பதிவேற்றம்
           </button>
 
-          {loading && <span style={{ fontSize: 12, color: "#0284c7" }}>ஏற்றுகிறது...</span>}
           {isModified && (
-            <>
-              {uploadedFileName && (
-                <span style={{ fontSize: 12, color: "#2e7d32", marginRight: 10 }}>
-                  ✓ ஏற்றப்பட்டது: {uploadedFileName}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={handleReset}
-                style={{
-                  fontSize: 12,
-                  color: "#555",
-                  background: "transparent",
-                  border: "1px solid #ccc",
-                  borderRadius: 6,
-                  padding: "4px 10px",
-                  cursor: "pointer",
-                }}
-              >
-                மாதிரி தரவுக்குத் திரும்பு
-              </button>
-            </>
-          )}
-
-          {uploadError && (
-            <span style={{ fontSize: 12, color: "#c62828" }}>⚠ {uploadError}</span>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-all"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> மாதிரி தரவுக்குத் திரும்பு
+            </button>
           )}
         </div>
-      </div>
+      </motion.div>
 
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        {/* Main Table Area */}
+        <div className="flex-1 relative w-full">
+          {/* Axis Labels */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-200 shadow-sm z-50">
+            பெண் / Female (Columns)
+          </div>
+          <div className="absolute top-1/2 -left-4 -translate-y-1/2 -translate-x-full bg-indigo-100 text-indigo-800 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-indigo-200 shadow-sm transform -rotate-90 origin-right z-50">
+            ஆண் / Male (Rows)
+          </div>
 
-
-      <div style={{ position: 'relative', paddingTop: 48, paddingLeft: 32 }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: 12,
-            fontWeight: 700,
-            color: '#0f172a',
-            whiteSpace: 'nowrap',
-            background: '#e0f2fe',
-            padding: '5px 12px',
-            borderRadius: 9999,
-            border: '1px solid #bae6fd',
-            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)'
-          }}
-        >
-          பெண் / Female
-        </div>
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: -35,
-            fontSize: 12,
-            fontWeight: 700,
-            color: '#0f172a',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            background: '#dcfce7',
-            padding: '8px 6px',
-            borderRadius: 9999,
-            border: '1px solid #bbf7d0',
-            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
-            transform: 'translateY(-50%) rotate(-90deg)',
-            transformOrigin: 'center'
-          }}
-        >
-          ஆண் / Male
-        </div>
-        <div className="npt-table-wrap">
-          <table className="npt-table">
-            <colgroup>
-              <col style={{ width: ROW_LABEL1_W }} />
-              <col style={{ width: ROW_LABEL2_W }} />
-              {STAR_ROWS.map((_, i) => (
-                <col key={i} style={{ width: COL_W }} />
-              ))}
-            </colgroup>
-            <thead>
-              {/* Row 1: Rashi group headers spanning 3 columns each */}
-              <tr>
-                <th
-                  className="npt-corner npt-band-right npt-band-bottom"
-                  rowSpan={2}
-                  colSpan={2}
-                  style={{ cursor: 'default' }}
-                >
-                  நட்சத்திரம்
-                  <br />
-                  பொருத்தம் (*/36)
-                </th>
-                {RASHIS.map((r, ri) => {
-                  const indices = rowIndicesForRashi(ri);
-                  const isSel = sameSet(selCols, indices);
-                  return (
-                    <th
-                      key={r.name}
-                      colSpan={3}
-                      onClick={() => clickRashiCol(ri)}
-                      className={`npt-col-rashi-head${ri < RASHIS.length - 1 ? ' npt-band-right' : ''}${isSel ? ' npt-head-selected' : ''}`}
-                    >
-                      {r.name}
-                    </th>
-                  );
-                })}
-              </tr>
-              {/* Row 2: individual star/pada headers */}
-              <tr>
-                {STAR_ROWS.map((s, ci) => {
-                  const isSel = selCols && selCols.length === 1 && selCols[0] === ci;
-                  return (
-                    <th
-                      key={ci}
-                      onClick={() => clickStarCol(ci)}
-                      className={`npt-col-star-head${ci < n - 1 && STAR_ROWS[ci + 1].isFirstOfGroup ? ' npt-band-right' : ''}${isSel ? ' npt-head-selected' : ''}`}
-                    >
-                      {s.star}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {STAR_ROWS.map((rowMeta, ri) => {
-                const rashiObj = RASHIS[rowMeta.rashiIndex];
-                const bottomBand = ri < n - 1 && STAR_ROWS[ri + 1].isFirstOfGroup;
-                const rowIsSel = selRows && selRows.includes(ri);
-                const rashiGroupIndices = rowIndicesForRashi(rowMeta.rashiIndex);
-                const rashiHeadSel = sameSet(selRows, rashiGroupIndices);
-                return (
-                  <tr key={ri}>
-                    {rowMeta.isFirstOfGroup && (
-                      <td
-                        className={`npt-row-rashi-label${rashiHeadSel ? ' npt-head-selected' : ''}`}
-                        rowSpan={rashiObj.stars.length}
-                        onClick={() => clickRashiRow(rowMeta.rashiIndex)}
-                      >
-                        {rashiObj.name}
-                      </td>
-                    )}
-                    <td
-                      className={`npt-row-star-label${bottomBand ? ' npt-band-bottom' : ''}${selRows && selRows.length === 1 && selRows[0] === ri ? ' npt-head-selected' : ''}`}
-                      onClick={() => clickStarRow(ri)}
-                    >
-                      {rowMeta.star}
-                    </td>
-                    {matrix[ri].map((val, ci) => {
-                      const colIsSel = selCols && selCols.includes(ci);
-                      const isMatch = rowIsSel && colIsSel;
-                      let cls = 'npt-data-cell';
-                      if (ci < n - 1 && STAR_ROWS[ci + 1].isFirstOfGroup) cls += ' npt-band-right';
-                      if (bottomBand) cls += ' npt-band-bottom';
-                      if (isMatch) cls += ' npt-match-cell';
-                      else if (rowIsSel) cls += ' npt-row-hit';
-                      else if (colIsSel) cls += ' npt-col-hit';
-                      return (
-                        <td
-                          key={ci}
-                          className={cls}
-                          style={isMatch ? undefined : { background: cellBg(val) }}
-                          onClick={() => clickCell(ri, ci)}
-                        >
-                          {val}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {singlePick && selRows && selCols && (
-        <div style={{
-          marginTop: 20,
-          background: "#ffffff",
-          border: "1px solid #ddd",
-          borderRadius: 12,
-          padding: 20,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
-        }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#111" }}>
-            Astrological Match: {STAR_ROWS[selRows[0]].star} (Bride) × {STAR_ROWS[selCols[0]].star} (Groom)
-          </h3>
-
-          {isDynLoading ? (
-            <div style={{ fontSize: 12, color: "#666" }}>Running dynamic calculations...</div>
-          ) : dynMatchResult ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20 }}>
-              
-              {/* Score section */}
-              <div style={{ background: "#f8fafc", padding: 16, borderRadius: 8, textAlign: "center" }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Overall Compatibility</p>
-                <div style={{ fontSize: 32, fontWeight: 800, color: "#312e81", marginTop: 8 }}>
-                  {dynMatchResult.totalScore} <span style={{ fontSize: 14, color: "#64748b" }}>/ 10</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#059669", marginTop: 4 }}>
-                  {dynMatchResult.percentage}% Match
-                </div>
-                <div style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  display: "inline-block",
-                  padding: "2px 8px",
-                  borderRadius: 12,
-                  background: dynMatchResult.rating === "Excellent" ? "#ecfdf5" : dynMatchResult.rating === "Good" ? "#eff6ff" : "#fef3c7",
-                  color: dynMatchResult.rating === "Excellent" ? "#047857" : dynMatchResult.rating === "Good" ? "#1d4ed8" : "#b45309",
-                  marginTop: 8
-                }}>
-                  {dynMatchResult.rating} Match
-                </div>
-              </div>
-
-              {/* 10 poruthams list */}
-              <div style={{ maxHeight: 250, overflowY: "auto", paddingRight: 8 }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {dynMatchResult.poruthamScores?.map((p: any, idx: number) => (
-                    <div key={idx} style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 12px",
-                      background: "#fdfdfd",
-                      border: "1px solid #f0f0f0",
-                      borderRadius: 6
-                    }}>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>{p.label}</div>
-                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{p.description}</div>
-                      </div>
-                      <div style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: p.status === "Uthamam" ? "#d1fae5" : p.status === "Madhyamam" ? "#fef3c7" : "#fee2e2",
-                        color: p.status === "Uthamam" ? "#065f46" : p.status === "Madhyamam" ? "#92400e" : "#991b1b"
-                      }}>
-                        {p.status}
-                      </div>
+          <div className="npt-table-wrap ml-6 mt-2 relative">
+            <table className="npt-table">
+              <colgroup>
+                <col style={{ width: ROW_LABEL1_W }} />
+                <col style={{ width: ROW_LABEL2_W }} />
+                {STAR_ROWS.map((_, i) => (
+                  <col key={i} style={{ width: COL_W }} />
+                ))}
+              </colgroup>
+              <thead>
+                <tr>
+                  <th className="npt-corner npt-band-right npt-band-bottom" rowSpan={2} colSpan={2}>
+                    <div className="flex flex-col items-center justify-center h-full gap-1">
+                      <Star className="h-4 w-4 text-slate-400" />
+                      <span>பொருத்தம்<br/>(*/36)</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          ) : (
-            <div style={{ fontSize: 12, color: "#666" }}>Failed to retrieve calculations.</div>
-          )}
+                  </th>
+                  {RASHIS.map((r, ri) => {
+                    const indices = rowIndicesForRashi(ri);
+                    const isSel = sameSet(selCols, indices);
+                    return (
+                      <th
+                        key={r.name}
+                        colSpan={3}
+                        onClick={() => clickRashiCol(ri)}
+                        className={`npt-col-rashi-head${ri < RASHIS.length - 1 ? ' npt-band-right' : ''}${isSel ? ' npt-head-selected' : ''}`}
+                      >
+                        {r.name}
+                      </th>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  {STAR_ROWS.map((s, ci) => {
+                    const isSel = selCols && selCols.length === 1 && selCols[0] === ci;
+                    return (
+                      <th
+                        key={ci}
+                        onClick={() => clickStarCol(ci)}
+                        className={`npt-col-star-head${ci < n - 1 && STAR_ROWS[ci + 1].isFirstOfGroup ? ' npt-band-right' : ''}${isSel ? ' npt-head-selected' : ''}`}
+                      >
+                        {s.star}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {STAR_ROWS.map((rowMeta, ri) => {
+                  const rashiObj = RASHIS[rowMeta.rashiIndex];
+                  const bottomBand = ri < n - 1 && STAR_ROWS[ri + 1].isFirstOfGroup;
+                  const rowIsSel = selRows && selRows.includes(ri);
+                  const rashiGroupIndices = rowIndicesForRashi(rowMeta.rashiIndex);
+                  const rashiHeadSel = sameSet(selRows, rashiGroupIndices);
+                  return (
+                    <tr key={ri}>
+                      {rowMeta.isFirstOfGroup && (
+                        <td
+                          className={`npt-row-rashi-label${rashiHeadSel ? ' npt-head-selected' : ''}`}
+                          rowSpan={rashiObj.stars.length}
+                          onClick={() => clickRashiRow(rowMeta.rashiIndex)}
+                        >
+                          {rashiObj.name}
+                        </td>
+                      )}
+                      <td
+                        className={`npt-row-star-label${bottomBand ? ' npt-band-bottom' : ''}${selRows && selRows.length === 1 && selRows[0] === ri ? ' npt-head-selected' : ''}`}
+                        onClick={() => clickStarRow(ri)}
+                      >
+                        {rowMeta.star}
+                      </td>
+                      {matrix[ri].map((val, ci) => {
+                        const colIsSel = selCols && selCols.includes(ci);
+                        const isMatch = rowIsSel && colIsSel;
+                        let cls = 'npt-data-cell';
+                        if (ci < n - 1 && STAR_ROWS[ci + 1].isFirstOfGroup) cls += ' npt-band-right';
+                        if (bottomBand) cls += ' npt-band-bottom';
+                        if (isMatch) cls += ' npt-match-cell';
+                        else if (rowIsSel) cls += ' npt-row-hit';
+                        else if (colIsSel) cls += ' npt-col-hit';
+                        return (
+                          <td
+                            key={ci}
+                            className={cls}
+                            style={isMatch ? undefined : { background: cellBg(val) }}
+                            onClick={() => clickCell(ri, ci)}
+                          >
+                            {val}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
 
-      <p style={{ fontSize: 11, color: '#777', marginTop: 8 }}>
-        * Values match the source spreadsheet exactly (36×36 porutham matrix). Click a rāsi or nakshathiram header
-        (row or column) to select it, or click any cell directly — the matching score is highlighted in amber.
-      </p>
+        {/* Info Panel / Results Card */}
+        <div className="w-full md:w-80 lg:w-96 shrink-0 space-y-4">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm sticky top-6">
+            <h3 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+              <Info className="h-4 w-4 text-indigo-500" />
+              Selection Details
+            </h3>
+            
+            {rowLabel || colLabel ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <div className="bg-indigo-50 text-indigo-900 text-xs font-bold p-2.5 rounded-xl border border-indigo-100 flex items-center gap-2">
+                    <span className="bg-indigo-200 text-indigo-800 text-[9px] uppercase px-1.5 py-0.5 rounded-md shrink-0">Male</span>
+                    {rowLabel || "—"}
+                  </div>
+                  <div className="bg-emerald-50 text-emerald-900 text-xs font-bold p-2.5 rounded-xl border border-emerald-100 flex items-center gap-2">
+                    <span className="bg-emerald-200 text-emerald-800 text-[9px] uppercase px-1.5 py-0.5 rounded-md shrink-0">Female</span>
+                    {colLabel || "—"}
+                  </div>
+                </div>
+                
+                {singlePick && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center mt-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Matrix Score</p>
+                    <div className="text-3xl font-black text-indigo-600">{pickedValue}<span className="text-lg text-slate-400">/36</span></div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-6 text-center text-slate-400 text-xs font-medium">
+                ஒரு நட்சத்திரம் (வரிசை) &amp; ஒரு நட்சத்திரம் (நெடுவரிசை) கிளிக் செய்யவும்
+              </div>
+            )}
+            
+            <AnimatePresence>
+              {singlePick && selRows && selCols && dynMatchResult && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dynamic Result</p>
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      dynMatchResult.rating === "Excellent" ? "bg-emerald-100 text-emerald-700" : dynMatchResult.rating === "Good" ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {dynMatchResult.rating}
+                    </span>
+                  </div>
+                  
+                  <div className="bg-white border border-slate-100 rounded-xl overflow-hidden max-h-[250px] overflow-y-auto custom-scrollbar">
+                    {dynMatchResult.poruthamScores?.map((p: any, idx: number) => (
+                      <div key={idx} className="p-2.5 border-b border-slate-50 last:border-0 flex justify-between items-center hover:bg-slate-50">
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-700">{p.label}</p>
+                          <p className="text-[9px] font-medium text-slate-400 truncate max-w-[140px]">{p.description}</p>
+                        </div>
+                        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                          p.status === "Uthamam" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : p.status === "Madhyamam" ? "bg-amber-50 text-amber-600 border border-amber-100" : "bg-rose-50 text-rose-600 border border-rose-100"
+                        }`}>
+                          {p.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {uploadError && (
+              <div className="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs font-medium flex gap-2">
+                <ShieldAlert className="h-4 w-4 shrink-0" /> {uploadError}
+              </div>
+            )}
+            
+            {uploadedFileName && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-xs font-bold flex gap-2 items-center">
+                <CheckCircle className="h-4 w-4 shrink-0" /> {uploadedFileName} loaded
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
