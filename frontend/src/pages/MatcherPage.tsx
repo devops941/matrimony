@@ -30,6 +30,7 @@ export default function MatcherPage() {
     handleAiAdvisory,
     handleUpdateProfileData,
     showToast,
+    handleConfirmMatch,
   } = useApp();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +60,7 @@ export default function MatcherPage() {
     setDisplayCount(BATCH_SIZE);
   }, [isDropdownOpen, searchTerm]);
 
-  const genderCandidates = profiles.filter(p => p.gender === matcherGender && p.approvedByAdmin);
+  const genderCandidates = profiles.filter(p => p.gender === matcherGender && p.approvedByAdmin && !p.confirmedMatchedWith);
 
   const filteredCandidates = genderCandidates.filter(p => {
     if (!searchTerm.trim()) return true;
@@ -418,6 +419,21 @@ export default function MatcherPage() {
                           }`}>
                           {matchingResult?.rating} Compatibility
                         </span>
+                      </div>
+                      
+                      <div className="pt-2">
+                        <button 
+                          onClick={async () => {
+                            if (primaryCandidate && matcherSelectedMatch?.profile) {
+                              await handleConfirmMatch(primaryCandidate.id, matcherSelectedMatch.profile.id);
+                              setIsModalOpen(false);
+                            }
+                          }}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Confirm Match (திருமணம் முடிவானது)
+                        </button>
                       </div>
                     </div>
 

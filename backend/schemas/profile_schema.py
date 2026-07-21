@@ -58,6 +58,10 @@ class ProfileCreateSchema(BaseModel):
 class ProfileUpdateSchema(BaseModel):
     name: Optional[str] = None
     gender: Optional[str] = None
+
+class ConfirmMatchRequest(BaseModel):
+    profileId1: str
+    profileId2: str
     age: Optional[int] = None
     height: Optional[str] = None
     weight: Optional[str] = None

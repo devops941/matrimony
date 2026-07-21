@@ -14,8 +14,8 @@ const DirectoryPage = () => {
   const { t } = useI18n();
   const {
     profiles,
-    handleUpdateProfileData,
     filteredProfiles,
+    handleUpdateProfileData,
     uniqueCommunities,
     uniqueLocations,
     uniqueStars,

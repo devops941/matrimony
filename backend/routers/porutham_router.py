@@ -81,8 +81,28 @@ async def calculate_two_stars(bride_star: str, groom_star: str):
 
 @router.get("", response_model=List[PoruthamOut])
 async def get_poruthams():
-    """Retrieve all 10 Poruthams ordered by orderIndex."""
+    """Retrieve all 10 Poruthams ordered by orderIndex. Seeds if empty."""
     records = await db.porutham.find_many(order={"orderIndex": "asc"})
+    
+    if not records:
+        default_poruthams = [
+            {"key": "Dina", "label": "Dina Porutham (தின பொருத்தம்) - Longevity & Health", "description": "Checks the star distance for health vitality, longevity, and general welfare of the couple.", "orderIndex": 1, "isEnabled": True},
+            {"key": "Gana", "label": "Gana Porutham (கண பொருத்தம்) - Temperament Matching", "description": "Checks mental compatibility and temperament based on Deva, Manusha, or Rakshasa Gana.", "orderIndex": 2, "isEnabled": True},
+            {"key": "Mahendra", "label": "Mahendra Porutham (மகேந்திர பொருத்தம்) - Progeny Growth", "description": "Evaluates prosperity, children, family growth and legacy based on star distance cycles.", "orderIndex": 3, "isEnabled": True},
+            {"key": "StreeDeerga", "label": "Stree Deerga Porutham (ஸ்திரீ தீர்க்க பொருத்தம்) - Bride Prosperity", "description": "Determines the well-being and prosperity of the bride based on star distance.", "orderIndex": 4, "isEnabled": True},
+            {"key": "Yoni", "label": "Yoni Porutham (யோனி பொருத்தம்) - Physical Attraction", "description": "Checks sexual and physical affinity through animal archetype compatibility between stars.", "orderIndex": 5, "isEnabled": True},
+            {"key": "Rasi", "label": "Rasi Porutham (ராசி பொருத்தம்) - Family Continuation", "description": "Measures overall zodiac sign compatibility for family unity and lineage continuation.", "orderIndex": 6, "isEnabled": True},
+            {"key": "RasiAdhipathi", "label": "Rasi Adhipathi Porutham (ராசி அதிபதி பொருத்தம்) - Mutual Friendship", "description": "Evaluates planetary friendship between the lords of the bride and groom's moon signs.", "orderIndex": 7, "isEnabled": True},
+            {"key": "Vasya", "label": "Vasya Porutham (வசிய பொருத்தம்) - Mutual Attraction", "description": "Assesses magnetic attraction and affection between the zodiac signs.", "orderIndex": 8, "isEnabled": True},
+            {"key": "Rajju", "label": "Rajju Porutham (ரஜ்ஜு பொருத்தம்) - Mangalya Dosham", "description": "Critical check for husband's longevity. Same Rajju is considered highly inauspicious.", "orderIndex": 9, "isEnabled": True},
+            {"key": "Vedha", "label": "Vedha Porutham (வேதை பொருத்தம்) - Absence of Obstacles", "description": "Checks for opposing or contradictory stars that may cause obstacles or suffering.", "orderIndex": 10, "isEnabled": True},
+        ]
+        
+        for p in default_poruthams:
+            await db.porutham.create(data=p)
+            
+        records = await db.porutham.find_many(order={"orderIndex": "asc"})
+        
     return records
 
 @router.put("/{id}", response_model=PoruthamOut)

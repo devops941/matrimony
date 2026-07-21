@@ -16,6 +16,14 @@ export async function updateProfile(
   return api.put(`/api/profiles/${id}`, payload);
 }
 
-export async function deleteProfile(id: string): Promise<{ message: string; id: string }> {
+export const deleteProfile = async (id: string) => {
   return api.delete(`/api/profiles/${id}`);
-}
+};
+
+export const confirmMatchAPI = async (profileId1: string, profileId2: string) => {
+  return api.post('/api/profiles/confirm-match', { profileId1, profileId2 });
+};
+
+export const undoMatchAPI = async (profileId1: string, profileId2: string) => {
+  return api.post('/api/profiles/undo-match', { profileId1, profileId2 });
+};

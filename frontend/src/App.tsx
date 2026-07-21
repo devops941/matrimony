@@ -14,7 +14,7 @@ import AttendancePage from './pages/AttendancePage';
 import AdminPage from './pages/AdminPage';
 import CompanyPage from './pages/CompanyPage';
 import SocialPage from './pages/SocialPage';
-import ConfirmedPage from './pages/ConfirmedPage';
+import ConfirmedMatchesPage from './pages/ConfirmedMatchesPage';
 import HelpPage from './pages/HelpPage';
 import NakshatraPage from './pages/NakshatraPage';
 import ProfileDetailModal from './components/modals/ProfileDetailModal';
@@ -103,7 +103,7 @@ function AppShell() {
       case 'admin':       return <AdminPage />;
       case 'company':     return <CompanyPage />;
       case 'social':      return <SocialPage />;
-      case 'confirmed':   return <ConfirmedPage />;
+      case 'confirmed':   return <ConfirmedMatchesPage />;
       case 'nakshatra':   return <NakshatraPage />;
       case 'help':        return <HelpPage />;
       default:            return <DashboardPage />;
