@@ -37,7 +37,7 @@ export default function MatcherPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownScrollRef = useRef<HTMLDivElement>(null);
-  
+
   // Infinite scroll state
   const [displayCount, setDisplayCount] = useState(15);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -60,7 +60,7 @@ export default function MatcherPage() {
   }, [isDropdownOpen, searchTerm]);
 
   const genderCandidates = profiles.filter(p => p.gender === matcherGender && p.approvedByAdmin);
-  
+
   const filteredCandidates = genderCandidates.filter(p => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
@@ -80,7 +80,7 @@ export default function MatcherPage() {
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const scrolledToBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 50;
-    
+
     if (scrolledToBottom && hasMoreCandidates && !isLoadingMore) {
       setIsLoadingMore(true);
       setTimeout(() => {
@@ -112,7 +112,7 @@ export default function MatcherPage() {
         {/* Step 1: Select Gender */}
         <div className="space-y-3 z-10">
           <label className="text-[11px] uppercase tracking-wider font-extrabold text-slate-500 flex items-center gap-2">
-            <span className="bg-slate-100 text-slate-600 w-5 h-5 rounded-full flex items-center justify-center">1</span> 
+            <span className="bg-slate-100 text-slate-600 w-5 h-5 rounded-full flex items-center justify-center">1</span>
             Select Primary Candidate Gender
           </label>
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-all shadow-sm">
@@ -131,12 +131,12 @@ export default function MatcherPage() {
         {/* Step 2: Choose Candidate (Searchable Custom Combobox) */}
         <div className="space-y-3 z-10">
           <label className="text-[11px] uppercase tracking-wider font-extrabold text-slate-500 flex items-center gap-2">
-            <span className="bg-slate-100 text-slate-600 w-5 h-5 rounded-full flex items-center justify-center">2</span> 
+            <span className="bg-slate-100 text-slate-600 w-5 h-5 rounded-full flex items-center justify-center">2</span>
             Choose {matcherGender} Candidate
           </label>
-          
+
           <div ref={dropdownRef} className="relative">
-            <div 
+            <div
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 cursor-pointer hover:border-indigo-300 hover:bg-slate-50/80 transition-all shadow-sm"
             >
@@ -162,14 +162,14 @@ export default function MatcherPage() {
 
             <AnimatePresence>
               {isDropdownOpen && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
                   ref={dropdownScrollRef}
                   onScroll={handleScroll}
-                  className="absolute z-50 left-0 right-0 mt-3 p-2 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-2xl max-h-[350px] overflow-y-auto space-y-2"
+                  className="absolute z-50 left-0 right-0 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-2xl max-h-[350px] overflow-y-auto space-y-2"
                 >
                   {/* Search input field */}
                   <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xl pb-2">
@@ -184,7 +184,7 @@ export default function MatcherPage() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
-                    
+
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 pt-3 flex justify-between">
                       <span>{displayedCandidates.length} of {filteredCandidates.length} results</span>
                     </div>
@@ -207,16 +207,15 @@ export default function MatcherPage() {
                                 setAiAnalysisText('');
                                 setIsDropdownOpen(false);
                               }}
-                              className={`p-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between ${
-                                isSelected ? 'bg-indigo-50/80 border border-indigo-100 shadow-sm' : 'hover:bg-slate-50 border border-transparent hover:border-slate-100'
-                              }`}
+                              className={`p-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between ${isSelected ? 'bg-indigo-50/80 border border-indigo-100 shadow-sm' : 'hover:bg-slate-50 border border-transparent hover:border-slate-100'
+                                }`}
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <Avatar type={p.avatarUrl} className={`h-10 w-10 shrink-0 ${isSelected ? 'ring-2 ring-indigo-200' : ''}`} />
                                 <div className="min-w-0">
                                   <p className={`text-sm font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>{p.name}</p>
                                   <p className="text-[10px] font-medium text-slate-500 truncate mt-0.5">
-                                    {p.registrationId || p.id.substring(0,8)} • <span className="font-bold">{p.nakshatra}</span> ({p.rasi})
+                                    {p.registrationId || p.id.substring(0, 8)} • <span className="font-bold">{p.nakshatra}</span> ({p.rasi})
                                   </p>
                                   <p className="text-[9px] font-medium text-slate-400 truncate">
                                     {p.education} • {p.location}
@@ -227,20 +226,20 @@ export default function MatcherPage() {
                             </div>
                           );
                         })}
-                        
+
                         {isLoadingMore && (
                           <div className="p-4 text-center">
                             <RefreshCw className="h-5 w-5 animate-spin text-indigo-500 mx-auto" />
                             <p className="text-xs font-medium text-slate-400 mt-2">Loading more candidates...</p>
                           </div>
                         )}
-                        
+
                         {!isLoadingMore && hasMoreCandidates && (
                           <div className="p-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                             ↓ Scroll to load more
                           </div>
                         )}
-                        
+
                         {!hasMoreCandidates && displayedCandidates.length > BATCH_SIZE && (
                           <div className="p-4 text-center text-[10px] font-bold text-slate-300 uppercase tracking-wider">
                             — End of results —
@@ -280,8 +279,8 @@ export default function MatcherPage() {
                 Compatibility Matches ({matcherGender === 'Male' ? 'Females' : 'Males'}) — Click any card to inspect
               </h3>
             </div>
-            
-            <motion.div 
+
+            <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="show"
@@ -304,15 +303,14 @@ export default function MatcherPage() {
                       <Avatar type={m.profile.avatarUrl} className={`h-12 w-12 shrink-0 ring-2 ring-slate-100 group-hover:ring-indigo-100 transition-all`} />
                       <div className="min-w-0">
                         <h4 className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{m.profile.name}</h4>
-                        <p className="text-[10px] font-medium text-slate-500 truncate mt-0.5">{m.profile.age} yrs • {m.profile.registrationId || m.profile.id.substring(0,6)}</p>
+                        <p className="text-[10px] font-medium text-slate-500 truncate mt-0.5">{m.profile.age} yrs • {m.profile.registrationId || m.profile.id.substring(0, 6)}</p>
                         <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{m.profile.nakshatra}</p>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0 flex flex-col items-end">
-                      <div className={`text-lg font-black tracking-tight flex items-baseline gap-0.5 ${
-                        isExcellent ? 'text-emerald-600' : isGood ? 'text-amber-600' : 'text-rose-600'
-                      }`}>
+                      <div className={`text-lg font-black tracking-tight flex items-baseline gap-0.5 ${isExcellent ? 'text-emerald-600' : isGood ? 'text-amber-600' : 'text-rose-600'
+                        }`}>
                         {score}<span className="text-xs font-bold opacity-70">%</span>
                       </div>
                       <div className="text-[8px] font-extrabold uppercase tracking-widest text-slate-400 mt-0.5">
@@ -351,13 +349,13 @@ export default function MatcherPage() {
 
               <div className="flex-1 overflow-y-auto p-6 md:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  
+
                   {/* Left Column: Overview Card */}
                   <div className="space-y-6">
                     {/* Visual Candidate Comparison */}
                     <div className="p-6 rounded-3xl border border-slate-200/60 bg-white shadow-sm flex items-center justify-between relative overflow-hidden">
                       <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900 via-transparent to-transparent"></div>
-                      
+
                       <div className="text-center space-y-2 z-10 w-2/5">
                         <Avatar type={primaryCandidate?.avatarUrl || ''} className="h-16 w-16 mx-auto ring-4 ring-indigo-50 shadow-md" />
                         <div>
@@ -365,13 +363,13 @@ export default function MatcherPage() {
                           <p className="text-[10px] font-bold text-slate-400 mt-0.5 truncate">{primaryCandidate?.nakshatra}</p>
                         </div>
                       </div>
-                      
+
                       <div className="z-10 flex flex-col items-center justify-center shrink-0 w-1/5">
                         <div className="bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center border border-slate-200 shadow-sm">
                           <span className="text-[10px] font-black text-slate-400">VS</span>
                         </div>
                       </div>
-                      
+
                       <div className="text-center space-y-2 z-10 w-2/5">
                         <Avatar type={matcherSelectedMatch.profile.avatarUrl} className="h-16 w-16 mx-auto ring-4 ring-rose-50 shadow-md" />
                         <div>
@@ -384,7 +382,7 @@ export default function MatcherPage() {
                     {/* Score panel */}
                     <div className="p-8 rounded-3xl border border-slate-200/60 bg-white shadow-sm text-center space-y-6">
                       <p className="text-[11px] uppercase tracking-widest font-black text-slate-400">Match Gauge</p>
-                      
+
                       <div className="relative w-36 h-36 mx-auto flex items-center justify-center drop-shadow-md">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle cx="72" cy="72" r="60" stroke="#f1f5f9" strokeWidth="12" fill="transparent" />
@@ -410,15 +408,14 @@ export default function MatcherPage() {
                       </div>
 
                       <div>
-                        <span className={`inline-flex px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider ${
-                          matchingResult?.rating === 'Excellent'
-                            ? `bg-emerald-50 text-emerald-600 border border-emerald-200`
-                            : matchingResult?.rating === 'Good'
+                        <span className={`inline-flex px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider ${matchingResult?.rating === 'Excellent'
+                          ? `bg-emerald-50 text-emerald-600 border border-emerald-200`
+                          : matchingResult?.rating === 'Good'
                             ? `bg-indigo-50 text-indigo-600 border border-indigo-200`
                             : matchingResult?.rating === 'Average'
-                            ? `bg-amber-50 text-amber-600 border border-amber-200`
-                            : `bg-rose-50 text-rose-600 border border-rose-200`
-                        }`}>
+                              ? `bg-amber-50 text-amber-600 border border-amber-200`
+                              : `bg-rose-50 text-rose-600 border border-rose-200`
+                          }`}>
                           {matchingResult?.rating} Compatibility
                         </span>
                       </div>
@@ -473,23 +470,21 @@ export default function MatcherPage() {
                           return (
                             <div
                               key={idx}
-                              className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-colors ${
-                                isUthamam
-                                  ? 'bg-emerald-50/50 border-emerald-100 hover:bg-emerald-50'
-                                  : isMadhyamam
+                              className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-colors ${isUthamam
+                                ? 'bg-emerald-50/50 border-emerald-100 hover:bg-emerald-50'
+                                : isMadhyamam
                                   ? 'bg-amber-50/50 border-amber-100 hover:bg-amber-50'
                                   : 'bg-rose-50/50 border-rose-100 hover:bg-rose-50'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-extrabold text-slate-800 truncate">{scoreCard.label}</span>
-                                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full shrink-0 ${
-                                  isUthamam
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : isMadhyamam
+                                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full shrink-0 ${isUthamam
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : isMadhyamam
                                     ? 'bg-amber-100 text-amber-800'
                                     : 'bg-rose-100 text-rose-800'
-                                }`}>
+                                  }`}>
                                   {scoreCard.status} (+{scoreCard.score})
                                 </span>
                               </div>
