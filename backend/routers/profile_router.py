@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from db import db
-from schemas.profile_schema import ProfileCreateSchema, ProfileUpdateSchema
+from schemas.profile_schema import ProfileCreateSchema, ProfileUpdateSchema, ConfirmMatchRequest
 from typing import List
 import uuid
 import random
@@ -154,3 +154,44 @@ async def delete_profile(id: str):
 
     await db.profile.delete(where={"id": id})
     return {"message": "Profile deleted", "id": id}
+
+@router.post("/confirm-match")
+async def confirm_match(data: ConfirmMatchRequest):
+    p1 = await db.profile.find_unique(where={"id": data.profileId1})
+    p2 = await db.profile.find_unique(where={"id": data.profileId2})
+    
+    if not p1 or not p2:
+        raise HTTPException(status_code=404, detail="One or both profiles not found")
+        
+    updated1 = await db.profile.update(
+        where={"id": data.profileId1},
+        data={"confirmedMatchedWith": data.profileId2}
+    )
+    
+    updated2 = await db.profile.update(
+        where={"id": data.profileId2},
+        data={"confirmedMatchedWith": data.profileId1}
+    )
+    
+    return {
+        "message": "Match confirmed successfully",
+        "profiles": [format_profile_response(updated1), format_profile_response(updated2)]
+    }
+
+@router.post("/undo-match")
+async def undo_match(data: ConfirmMatchRequest):
+    p1 = await db.profile.find_unique(where={"id": data.profileId1})
+    p2 = await db.profile.find_unique(where={"id": data.profileId2})
+    
+    if p1:
+        await db.profile.update(
+            where={"id": data.profileId1},
+            data={"confirmedMatchedWith": None}
+        )
+    if p2:
+        await db.profile.update(
+            where={"id": data.profileId2},
+            data={"confirmedMatchedWith": None}
+        )
+        
+    return {"message": "Match undone successfully"}

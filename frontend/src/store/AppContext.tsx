@@ -17,7 +17,7 @@ import { getCommunities, createCommunity, updateCommunity, deleteCommunity } fro
 import { getCustomNakshatras, createCustomNakshatra, updateCustomNakshatra, deleteCustomNakshatra, CustomNakshatra } from '../api/nakshatra_api';
 import { getPoruthams, updatePorutham, PoruthamConfig, getMatchCandidates } from '../api/porutham_api';
 import { getJobCategories, createJobCategory, updateJobCategory, deleteJobCategory, JobCategory } from '../api/job_category_api';
-import { getProfiles, createProfile, updateProfile, deleteProfile } from '../api/profile_api';
+import { getProfiles, createProfile, updateProfile, deleteProfile, confirmMatchAPI, undoMatchAPI } from '../api/profile_api';
 
 
 interface AppContextType {
@@ -247,6 +247,8 @@ interface AppContextType {
   handleUpdateCommunity: (id: string, payload: { name?: string; isActive?: boolean }) => Promise<void>;
   handleDeleteCommunity: (id: string) => Promise<void>;
   handleAiAdvisory: (bride: Profile, groom: Profile) => void;
+  handleConfirmMatch: (profileId1: string, profileId2: string) => Promise<void>;
+  handleUndoMatch: (profileId1: string, profileId2: string) => Promise<void>;
   combinedNakshatras: any[];
   newNakshatraName: string;
   setNewNakshatraName: React.Dispatch<React.SetStateAction<string>>;
@@ -555,9 +557,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsMatcherLoading(true);
     try {
       const data = await getMatchCandidates(profileId);
-      setMatcherMatches(data);
-      if (data.length > 0) {
-        setMatcherSelectedMatch(data[0]);
+      const activeData = data.filter((m: any) => !m.profile.confirmedMatchedWith);
+      setMatcherMatches(activeData);
+      if (activeData.length > 0) {
+        setMatcherSelectedMatch(activeData[0]);
       } else {
         setMatcherSelectedMatch(null);
       }
@@ -578,7 +581,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [matcherPrimaryProfileId, fetchMatcherMatches]);
 
   useEffect(() => {
-    const list = profiles.filter(p => p.gender === matcherGender && p.approvedByAdmin);
+    const list = profiles.filter(p => p.gender === matcherGender && p.approvedByAdmin && !p.confirmedMatchedWith);
     if (list.length > 0) {
       const currentIsValid = list.some(p => p.id === matcherPrimaryProfileId);
       if (!currentIsValid) {
@@ -1256,6 +1259,35 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     setIsAiAnalyzing(false);
   }, [showToast, calculateExpectationMatch]);
 
+  const handleConfirmMatch = useCallback(async (profileId1: string, profileId2: string) => {
+    try {
+      await confirmMatchAPI(profileId1, profileId2);
+      setProfiles(prev => prev.map(p => {
+        if (p.id === profileId1) return { ...p, confirmedMatchedWith: profileId2 };
+        if (p.id === profileId2) return { ...p, confirmedMatchedWith: profileId1 };
+        return p;
+      }));
+      showToast('Match confirmed successfully! Profiles are now locked.', 'success');
+    } catch (error) {
+      showToast('Failed to confirm match.', 'error');
+    }
+  }, [showToast]);
+
+  const handleUndoMatch = useCallback(async (profileId1: string, profileId2: string) => {
+    try {
+      await undoMatchAPI(profileId1, profileId2);
+      setProfiles(prev => prev.map(p => {
+        if (p.id === profileId1 || p.id === profileId2) {
+          return { ...p, confirmedMatchedWith: undefined };
+        }
+        return p;
+      }));
+      showToast('Match unlocked successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to undo match.', 'error');
+    }
+  }, [showToast]);
+
   const maleCount = useMemo(() => profiles.filter(p => p.gender === 'Male').length, [profiles]);
   const femaleCount = useMemo(() => profiles.filter(p => p.gender === 'Female').length, [profiles]);
   const totalProfiles = useMemo(() => profiles.length, [profiles]);
@@ -1263,6 +1295,7 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
   const acceptedRequestsCount = useMemo(() => requests.filter(r => r.status === 'Accepted').length, [requests]);
 
   const filteredProfiles = useMemo(() => profiles.filter(p => {
+    if (p.confirmedMatchedWith) return false;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           p.education.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           p.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -1478,7 +1511,9 @@ Both candidates bring complementary strengths to the relationship. ${bride.name}
     isNewJobCategoryOpen, setIsNewJobCategoryOpen,
     handleUpdateProfileData,
     isSavingProfile,
-    handleAiAdvisory
+    handleAiAdvisory,
+    handleConfirmMatch,
+    handleUndoMatch
   };
 
   return (

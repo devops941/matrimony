@@ -1,4 +1,4 @@
-import { Heart, BarChart3, Building, Users, Compass, Sparkles, ClipboardList, Calendar, Settings, MessageSquare, HelpCircle, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Heart, BarChart3, Building, Users, Compass, Sparkles, ClipboardList, Calendar, Settings, MessageSquare, HelpCircle, ChevronLeft, ChevronRight, Star, HeartHandshake } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { useApp } from '../../store/AppContext';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { key: 'directory', labelKey: 'manageProfiles', Icon: Users },
   { key: 'matcher', labelKey: 'poruthamMatcher', Icon: Compass },
   { key: 'nakshatra', labelKey: 'nakshatraPorutham', Icon: Star },
+  { key: 'confirmed', labelKey: 'confirmedMatches', Icon: HeartHandshake },
   { key: 'attendance', labelKey: 'attendanceEntry', Icon: Calendar },
   { key: 'admin', labelKey: 'userCreationSettings', Icon: Settings },
 ] as const;
